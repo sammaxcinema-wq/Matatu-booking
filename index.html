@@ -2,21 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes">
-  <title>TransitCore SaaS | Matatu Live Booking & Offline Tickets</title>
-  <!-- Tailwind + Inter Font + basic glassmorphism overrides -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>TransitCore Pro | Enterprise Matatu SaaS</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- QR Code Generator -->
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <!-- Alpine.js for reactive components (optional but helps) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <style>
-    /* custom glassmorphism & smooth transitions */
+    * { box-sizing: border-box; }
     body {
       background: radial-gradient(circle at 10% 20%, rgb(20, 24, 35), rgb(9, 11, 18));
-      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+      color: #fff;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
     }
     .glass-card {
       background: rgba(24, 27, 38, 0.75);
@@ -25,564 +26,173 @@
       border-radius: 1.5rem;
       transition: all 0.2s ease;
     }
-    .glass-card-light {
-      background: rgba(30, 34, 48, 0.65);
-      backdrop-filter: blur(8px);
-    }
-    .seat-available {
-      background: #27272a;
-      border: 1px solid #3f3f46;
-      transition: all 0.1s ease;
-    }
-    .seat-available:hover {
-      background: #3f3f46;
-      transform: scale(1.02);
-    }
-    .seat-selected {
-      background: #10b981;
-      border-color: #34d399;
-      box-shadow: 0 0 8px rgba(16,185,129,0.5);
-    }
-    .seat-locked {
-      background: #b45309;
-      border-color: #f59e0b;
-      cursor: not-allowed;
-      opacity: 0.7;
-    }
-    .seat-sold {
-      background: #991b1b;
-      border-color: #7f1d1d;
-      text-decoration: line-through;
-      cursor: not-allowed;
-    }
-    .btn-primary {
-      background: #10b981;
-      transition: all 0.2s;
-    }
-    .btn-primary:hover {
-      background: #059669;
-      transform: translateY(-1px);
-    }
-    /* custom scroll */
-    ::-webkit-scrollbar {
-      width: 5px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #1f1f2e;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #10b981;
-      border-radius: 10px;
-    }
+    .glass-card-light { background: rgba(30, 34, 48, 0.65); backdrop-filter: blur(8px); }
+    .auth-container { position: fixed; inset: 0; background: rgba(9, 11, 18, 0.98); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); }
+    .seat-available { background: #27272a; border: 1px solid #3f3f46; transition: all 0.1s ease; color: #e4e4e7; }
+    .seat-available:hover { background: #3f3f46; transform: scale(1.02); }
+    .seat-selected { background: #10b981; border-color: #34d399; box-shadow: 0 0 8px rgba(16,185,129,0.5); color: white; }
+    .seat-locked { background: #b45309; border-color: #f59e0b; cursor: not-allowed; opacity: 0.7; color: #fed7aa; }
+    .seat-sold { background: #991b1b; border-color: #7f1d1d; text-decoration: line-through; cursor: not-allowed; color: #fca5a5; }
+    .btn-primary { background: #10b981; transition: all 0.2s; }
+    .btn-primary:hover:not(:disabled) { background: #059669; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: rgba(59, 130, 246, 0.8); transition: all 0.2s; }
+    .btn-secondary:hover:not(:disabled) { background: rgb(59, 130, 246); }
+    .btn-danger { background: rgba(239, 68, 68, 0.8); transition: all 0.2s; }
+    .btn-danger:hover:not(:disabled) { background: rgb(239, 68, 68); }
+    .nav-tab { position: relative; padding-bottom: 0.5rem; border-bottom: 2px solid transparent; color: #a1a1a1; transition: all 0.2s; cursor: pointer; }
+    .nav-tab.active { color: #10b981; border-bottom-color: #10b981; }
+    .input-field { background: rgba(24, 27, 38, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.75rem; padding: 0.75rem; color: white; transition: all 0.2s; }
+    .input-field:focus { outline: none; border-color: #10b981; background: rgba(24, 27, 38, 0.8); box-shadow: 0 0 12px rgba(16, 185, 129, 0.2); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+    .table-row { border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding: 1rem 0; transition: all 0.2s; }
+    .badge-status { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+    .badge-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+    .badge-inactive { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
+    .error-message { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 0.75rem; border-radius: 0.75rem; font-size: 0.875rem; }
+    .success-message { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #86efac; padding: 0.75rem; border-radius: 0.75rem; font-size: 0.875rem; }
+    .spinner { display: inline-block; width: 1rem; height: 1rem; border: 2px solid rgba(16, 185, 129, 0.3); border-top: 2px solid #10b981; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(31, 31, 46, 0.5); }
+    ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
+    .animate-fadeIn { animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
-<body class="text-white antialiased">
+<body>
 
-  <!-- Multi-Tenant & Header simulation -->
-  <div class="max-w-7xl mx-auto px-4 py-6 md:py-8">
-    <!-- Tenant branding bar -->
-    <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shadow-lg">
-          <span class="text-xl font-black">T</span>
-        </div>
-        <h1 class="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-emerald-200 bg-clip-text text-transparent">TransitCore<span class="text-white text-lg"> | Matatu Nexus</span></h1>
-      </div>
-      <div class="glass-card px-4 py-2 rounded-xl text-sm flex items-center gap-2">
-        <i data-lucide="building2" class="w-4 h-4"></i>
-        <select id="tenantSelector" class="bg-transparent border-none outline-none text-emerald-300 font-medium cursor-pointer">
-          <option value="sacco_simba" class="bg-zinc-900">🚐 Simba Sacco (demo)</option>
-          <option value="sacco_nganya" class="bg-zinc-900">💨 Nganya Express</option>
+<!-- AUTH OVERLAY -->
+<div id="authOverlay" class="auth-container">
+  <div class="glass-card p-8 w-[90%] max-w-md">
+    <div class="flex items-center justify-center mb-6">
+      <div class="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg mr-3"><span class="text-2xl font-black">T</span></div>
+      <h1 class="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-emerald-200 bg-clip-text text-transparent">TransitCore</h1>
+    </div>
+    <p class="text-center text-zinc-400 mb-6 text-sm">Enterprise Fleet Management • Offline Credentials</p>
+    <div id="authError" class="error-message hidden mb-4"></div>
+    <div class="space-y-4 mb-6">
+      <div><label class="text-xs uppercase tracking-widest text-zinc-400 mb-2 block">Organization</label>
+        <select id="authTenant" class="w-full input-field">
+          <option value="">— Select Organization —</option>
+          <option value="sacco_simba">🚐 Simba Sacco (Premium)</option>
+          <option value="sacco_nganya">💨 Nganya Express (Metro)</option>
         </select>
       </div>
+      <div><label class="text-xs uppercase tracking-widest text-zinc-400 mb-2 block">Email</label>
+        <input type="email" id="authEmail" class="w-full input-field" placeholder="admin@transit.local" value="admin@transit.local">
+      </div>
+      <div><label class="text-xs uppercase tracking-widest text-zinc-400 mb-2 block">Password</label>
+        <input type="password" id="authPassword" class="w-full input-field" placeholder="••••••••" value="admin123">
+      </div>
+      <div><label class="text-xs uppercase tracking-widest text-zinc-400 mb-2 block">Role</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" id="roleCommuter" class="role-btn py-2 px-3 rounded-lg border border-zinc-700 text-sm text-zinc-400 hover:border-emerald-500/50">👤 Commuter</button>
+          <button type="button" id="roleAdmin" class="role-btn py-2 px-3 rounded-lg border border-emerald-500 bg-emerald-500/20 text-emerald-400 font-semibold">⚙️ Admin</button>
+        </div>
+        <input type="hidden" id="selectedRole" value="admin">
+      </div>
     </div>
+    <button id="authSubmit" class="w-full btn-primary py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
+      <span id="authSubmitText">Secure Access</span>
+      <span id="authSpinner" class="spinner hidden"></span>
+    </button>
+    <p class="text-center text-[10px] text-zinc-500 mt-4">✓ Multi-tenant vault • HMAC-256 tickets</p>
+  </div>
+</div>
 
-    <div class="grid md:grid-cols-12 gap-6">
-      <!-- LEFT COLUMN: Commuter PWA (mobile first seat map & booking) -->
-      <div class="md:col-span-7 space-y-5">
-        <!-- Trip Selection Card -->
-        <div class="glass-card p-5" x-data="tripSelection()" x-init="initTrips()">
-          <div class="flex items-center gap-3 mb-4">
-            <i data-lucide="map-pin" class="w-5 h-5 text-emerald-400"></i>
-            <h2 class="text-xl font-semibold">Select your trip</h2>
-          </div>
-          <div class="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label class="text-xs uppercase tracking-wide text-zinc-400">Route</label>
-              <select x-model="selectedRouteId" @change="updateTrips()" class="w-full mt-1 bg-zinc-800/80 border border-zinc-700 rounded-xl p-2 text-white">
-                <template x-for="route in routes" :key="route.id">
-                  <option :value="route.id" x-text="`${route.source} → ${route.destination} (KSh ${route.baseFare})`"></option>
-                </template>
-              </select>
-            </div>
-            <div>
-              <label class="text-xs uppercase tracking-wide text-zinc-400">Departure</label>
-              <select x-model="selectedTrip" @change="onTripChange()" class="w-full mt-1 bg-zinc-800/80 border border-zinc-700 rounded-xl p-2 text-white">
-                <template x-for="trip in availableTrips" :key="trip.id">
-                  <option :value="trip" x-text="`${trip.departureTime}  •  ${trip.vehiclePlate}`"></option>
-                </template>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- Interactive Seat Map (Simulated Redis Locking + WebSocket broadcast via EventBus) -->
-        <div class="glass-card p-5" id="seatMapContainer">
-          <div class="flex justify-between items-center flex-wrap mb-3">
-            <div class="flex gap-3 text-xs">
-              <span class="flex items-center gap-1"><span class="w-3 h-3 bg-zinc-700 rounded"></span> Available</span>
-              <span class="flex items-center gap-1"><span class="w-3 h-3 bg-emerald-500 rounded"></span> Selected</span>
-              <span class="flex items-center gap-1"><span class="w-3 h-3 bg-amber-700 rounded"></span> Locked (temp)</span>
-              <span class="flex items-center gap-1"><span class="w-3 h-3 bg-red-800 rounded"></span> Sold</span>
-            </div>
-            <span class="text-xs bg-zinc-800 px-3 py-1 rounded-full" id="lockTimerHint">⏱️ Locks auto-release after 180s</span>
-          </div>
-          <div id="dynamicSeatGrid" class="grid justify-center gap-2 py-2"></div>
-          <div class="mt-4 flex justify-between items-center border-t border-zinc-800 pt-3">
-            <div>
-              <span class="text-zinc-400 text-sm">Selected seats:</span>
-              <span id="selectedSeatsList" class="font-mono text-emerald-300 ml-2">—</span>
-            </div>
-            <div class="text-right">
-              <div class="text-xl font-bold" id="totalAmount">KSh 0</div>
-            </div>
-          </div>
-          <button id="proceedPaymentBtn" class="w-full mt-4 btn-primary py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-            <i data-lucide="smartphone" class="w-4 h-4"></i> Book & Pay with M-Pesa
-          </button>
-        </div>
-
-        <!-- Ticket & Offline QR Section (shown after payment) -->
-        <div id="ticketSection" class="glass-card p-5 hidden transition-all">
-          <div class="flex items-center gap-2 mb-3 border-b border-emerald-500/30 pb-2">
-            <i data-lucide="ticket" class="w-5 h-5 text-emerald-400"></i>
-            <h3 class="font-bold">🎟️ Your Boarding Pass (Offline‑Capable)</h3>
-          </div>
-          <div class="flex flex-col sm:flex-row gap-5 items-center sm:items-start">
-            <div id="qrCodeContainer" class="bg-white p-2 rounded-xl w-32 h-32 flex items-center justify-center"></div>
-            <div class="flex-1 text-sm space-y-1">
-              <p><span class="text-zinc-400">Booking ID:</span> <span id="bookingIdDisplay" class="font-mono"></span></p>
-              <p><span class="text-zinc-400">Trip:</span> <span id="tripDisplay"></span></p>
-              <p><span class="text-zinc-400">Seats:</span> <span id="ticketSeats" class="text-emerald-300"></span></p>
-              <p><span class="text-zinc-400">Expires:</span> <span id="ticketExpiry"></span></p>
-              <p class="text-xs text-emerald-400/80 mt-2">✓ HMAC-SHA256 signed • Conductor can verify offline</p>
-            </div>
-          </div>
-        </div>
+<!-- MAIN APP -->
+<div id="mainApp" class="hidden flex flex-col h-screen">
+  <div class="border-b border-zinc-800/50 glass-card-light sticky top-0 z-40 flex-shrink-0">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center flex-wrap gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center"><span class="text-xl font-black">T</span></div>
+        <div><h1 class="text-xl font-bold">TransitCore Pro</h1><p class="text-xs text-zinc-400" id="tenantDisplay">—</p></div>
       </div>
-
-      <!-- RIGHT COLUMN: Live operations feed + conductor verification demo -->
-      <div class="md:col-span-5 space-y-5">
-        <!-- Live Operations Feed (real-time occupancy / seat events) -->
-        <div class="glass-card p-5">
-          <div class="flex justify-between items-center">
-            <div class="flex gap-2 items-center"><i data-lucide="bus-front" class="w-4 h-4 text-emerald-400"></i><span class="font-semibold">Live Fleet Monitor</span></div>
-            <span class="text-[10px] bg-emerald-900/50 px-2 py-0.5 rounded-full">WebSocket SSE simulation</span>
-          </div>
-          <div id="liveFeed" class="mt-3 space-y-2 max-h-48 overflow-y-auto text-sm">
-            <div class="text-zinc-500 text-center py-2">Select a trip to see live occupancy</div>
-          </div>
-        </div>
-
-        <!-- Conductor Offline Verification Simulator -->
-        <div class="glass-card p-5">
-          <div class="flex gap-2 items-center mb-3"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i><span class="font-bold">Conductor Verification (Offline)</span></div>
-          <p class="text-xs text-zinc-400 mb-2">Paste QR payload or use last generated ticket → verify HMAC signature & expiry</p>
-          <textarea id="verifyQrInput" rows="2" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-2 text-xs font-mono" placeholder="Paste base64 ticket data from QR..."></textarea>
-          <button id="verifyTicketBtn" class="mt-2 w-full bg-indigo-600/80 hover:bg-indigo-500 py-2 rounded-lg text-sm flex items-center justify-center gap-1">
-            <i data-lucide="scan" class="w-3 h-3"></i> Verify Ticket Offline
-          </button>
-          <div id="verifyResult" class="mt-3 text-xs rounded-lg p-2 bg-black/30 hidden"></div>
-          <div class="mt-3 text-[11px] text-zinc-500 border-t border-zinc-800 pt-2">
-            🔐 Cryptographic security: QR contains signed JSON (HMAC-SHA256) with tenant secret. No internet required for validation.
-          </div>
-        </div>
-        <!-- Sacco Admin tip: multi-tenant isolation -->
-        <div class="glass-card-light p-3 text-center text-xs text-zinc-400">
-          <i data-lucide="globe" class="inline w-3 h-3"></i> Multi‑tenant isolation via X-Tenant-ID • Redis seat locks with 180s TTL • Daraja STK simulation
-        </div>
+      <div class="flex items-center gap-4">
+        <div class="glass-card px-4 py-2 rounded-lg text-sm flex items-center gap-2"><span id="userInfo" class="text-xs sm:text-sm">—</span><span id="roleDisplay" class="badge-status badge-active text-xs">—</span></div>
+        <button id="logoutBtn" class="px-3 sm:px-4 py-2 rounded-lg text-sm border border-zinc-700 hover:border-red-500 hover:text-red-400 transition-all">Logout</button>
       </div>
+    </div>
+    <div class="max-w-7xl mx-auto px-4 py-3 flex gap-6 sm:gap-8 border-t border-zinc-800/50 overflow-x-auto">
+      <button class="nav-tab active" data-view="commuter">🎫 Booking</button>
+      <button class="nav-tab" data-view="admin" id="adminNavTab">⚙️ Admin Console</button>
     </div>
   </div>
 
-  <!-- M-Pesa Simulation Modal (lightweight) -->
-  <div id="mpesaModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 hidden transition-all">
-    <div class="glass-card p-6 w-[90%] max-w-sm text-center">
-      <i data-lucide="smartphone" class="w-12 h-12 text-emerald-400 mx-auto mb-2"></i>
-      <h3 class="text-xl font-bold">M-Pesa STK Push</h3>
-      <p class="text-sm text-zinc-300 mt-1">Enter phone number to complete payment</p>
-      <input type="tel" id="mpesaPhone" placeholder="0712345678" class="w-full mt-3 bg-zinc-800 border border-zinc-600 rounded-xl p-2 text-center">
-      <div class="flex gap-2 mt-5">
-        <button id="cancelMpesa" class="flex-1 py-2 bg-zinc-700 rounded-lg">Cancel</button>
-        <button id="confirmMpesaPay" class="flex-1 bg-emerald-600 py-2 rounded-lg font-semibold">Pay KSh <span id="modalAmount">0</span></button>
+  <div id="contentArea" class="flex-1 overflow-y-auto">
+    <div class="max-w-7xl mx-auto px-4 py-6">
+      <!-- COMMUTER VIEW -->
+      <div id="commuterView" class="space-y-6">
+        <div class="flex justify-end"><div class="glass-card px-4 py-2 rounded-xl text-sm flex items-center gap-2"><i data-lucide="building2" class="w-4 h-4"></i><select id="tenantSelector" class="bg-transparent border-none outline-none text-emerald-300 font-medium cursor-pointer"><option value="sacco_simba">🚐 Simba Sacco</option><option value="sacco_nganya">💨 Nganya Express</option></select></div></div>
+        <div class="grid md:grid-cols-12 gap-6">
+          <div class="md:col-span-7 space-y-5">
+            <div class="glass-card p-5"><div class="flex items-center gap-3 mb-4"><i data-lucide="map-pin" class="w-5 h-5 text-emerald-400"></i><h2 class="text-xl font-semibold">Select corridor & departure</h2></div>
+              <div id="tripSelectionError" class="error-message hidden mb-4"></div>
+              <div class="grid sm:grid-cols-2 gap-4"><div><label class="text-xs uppercase text-zinc-400">Route</label><select id="routeSelect" class="w-full mt-1 input-field"></select></div><div><label class="text-xs uppercase text-zinc-400">Departure</label><select id="tripSelect" class="w-full mt-1 input-field"></select></div></div>
+            </div>
+            <div class="glass-card p-5"><div class="flex justify-between items-center flex-wrap mb-3"><div class="flex gap-3 text-xs"><span class="flex items-center gap-1"><span class="w-3 h-3 bg-zinc-700 rounded"></span> Open</span><span class="flex items-center gap-1"><span class="w-3 h-3 bg-emerald-500 rounded"></span> Selected</span><span class="flex items-center gap-1"><span class="w-3 h-3 bg-amber-700 rounded"></span> Locked</span><span class="flex items-center gap-1"><span class="w-3 h-3 bg-red-800 rounded"></span> Sold</span></div><span class="text-xs bg-zinc-800 px-3 py-1 rounded-full">⏱️ 180s lock</span></div>
+              <div id="dynamicSeatGrid" class="grid justify-center gap-2 py-4 min-h-[180px]"><div class="text-center text-zinc-500 col-span-full py-8">Select a trip to load seating matrix</div></div>
+              <div class="mt-4 flex justify-between items-center border-t border-zinc-800 pt-3"><div><span class="text-zinc-400 text-sm">Selected:</span><span id="selectedSeatsList" class="font-mono text-emerald-300 ml-2">—</span></div><div class="text-right"><div class="text-xl font-bold" id="totalAmount">KSh 0</div></div></div>
+              <button id="proceedPaymentBtn" class="w-full mt-4 btn-primary py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50" disabled><i data-lucide="smartphone" class="w-4 h-4"></i> Book & Pay with M-Pesa</button>
+            </div>
+            <div id="ticketSection" class="glass-card p-5 hidden"><div class="flex items-center gap-2 mb-3 border-b border-emerald-500/30 pb-2"><i data-lucide="ticket" class="w-5 h-5 text-emerald-400"></i><h3 class="font-bold">🎟️ Boarding Pass (Offline)</h3></div>
+              <div class="flex flex-col sm:flex-row gap-5 items-center sm:items-start"><div id="qrCodeContainer" class="bg-white p-2 rounded-xl w-32 h-32 flex items-center justify-center text-black text-xs text-center flex-shrink-0"></div><div class="flex-1 text-sm space-y-1.5"><p><span class="text-zinc-400">Booking ID:</span> <span id="bookingIdDisplay" class="font-mono text-xs">—</span></p><p><span class="text-zinc-400">Trip:</span> <span id="tripDisplay" class="text-xs">—</span></p><p><span class="text-zinc-400">Seats:</span> <span id="ticketSeats" class="text-emerald-300 text-xs">—</span></p><p><span class="text-zinc-400">Expires:</span> <span id="ticketExpiry" class="text-xs">—</span></p><p class="text-xs text-emerald-400/80 mt-2">✓ HMAC-SHA256 • conductor-ready</p></div></div>
+            </div>
+          </div>
+          <div class="md:col-span-5 space-y-5">
+            <div class="glass-card p-5"><div class="flex gap-2 items-center mb-3"><i data-lucide="bus-front" class="w-4 h-4 text-emerald-400"></i><span class="font-semibold text-sm">Live Fleet Feed</span></div><div id="liveFeed" class="space-y-2 max-h-48 overflow-y-auto text-xs"><div class="text-zinc-500 text-center py-6">Awaiting trip selection</div></div></div>
+            <div class="glass-card p-5"><div class="flex gap-2 items-center mb-3"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i><span class="font-bold text-sm">Offline Ticket Verifier</span></div><textarea id="verifyQrInput" rows="2" class="w-full input-field text-xs font-mono mb-2" placeholder="Paste QR payload..."></textarea><button id="verifyTicketBtn" class="w-full btn-secondary py-2 rounded-lg text-sm flex items-center justify-center gap-1"><i data-lucide="scan" class="w-3 h-3"></i> Cryptographic Verify</button><div id="verifyResult" class="mt-3 text-xs rounded-lg p-2 bg-black/30 hidden"></div></div>
+          </div>
+        </div>
       </div>
-      <p class="text-[10px] text-zinc-500 mt-3">Demo: success 85% / failure simulation</p>
+
+      <!-- ADMIN VIEW -->
+      <div id="adminView" class="hidden space-y-6">
+        <div class="flex gap-4 border-b border-zinc-800/50 pb-3 overflow-x-auto"><button class="admin-tab active" data-tab="overview">📊 Overview</button><button class="admin-tab" data-tab="buses">🚌 Fleet</button><button class="admin-tab" data-tab="routes">🗺️ Routes</button><button class="admin-tab" data-tab="trips">🚀 Schedules</button></div>
+        <div id="overviewTab" class="admin-content"><div class="grid md:grid-cols-4 gap-4"><div class="glass-card p-5 text-center"><div class="text-3xl font-bold text-emerald-400" id="statBuses">0</div><p class="text-xs text-zinc-400">Active Buses</p></div><div class="glass-card p-5 text-center"><div class="text-3xl font-bold text-blue-400" id="statRoutes">0</div><p class="text-xs text-zinc-400">Routes</p></div><div class="glass-card p-5 text-center"><div class="text-3xl font-bold text-purple-400" id="statTrips">0</div><p class="text-xs text-zinc-400">Trips</p></div><div class="glass-card p-5 text-center"><div class="text-3xl font-bold text-yellow-400" id="statRevenue">KSh 0</div><p class="text-xs text-zinc-400">Est. Revenue</p></div></div></div>
+        <div id="busesTab" class="admin-content hidden"><div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold flex items-center gap-2"><i data-lucide="bus" class="w-5 h-5 text-emerald-400"></i> Fleet Inventory</h3><button id="addBusBtn" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Add Bus</button></div><div class="glass-card p-5"><div id="busesTable" class="space-y-3"></div></div></div>
+        <div id="routesTab" class="admin-content hidden"><div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold flex items-center gap-2"><i data-lucide="map" class="w-5 h-5 text-blue-400"></i> Corridors</h3><button id="addRouteBtn" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Add Route</button></div><div class="glass-card p-5"><div id="routesTable" class="space-y-3"></div></div></div>
+        <div id="tripsTab" class="admin-content hidden"><div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold flex items-center gap-2"><i data-lucide="zap" class="w-5 h-5 text-purple-400"></i> Timetable</h3><button id="addTripBtn" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Schedule Trip</button></div><div class="glass-card p-5"><div id="tripsTable" class="space-y-3"></div></div></div>
+      </div>
     </div>
   </div>
+</div>
 
-  <script>
-    // ---------- GLOBALS: Redis-like seat locking engine (in-memory simulation with timers) ----------
-    let currentTrip = null;               // current trip object
-    let currentTenantSecret = "simba_sacco_secret_2026";  // per-tenant HMAC key
-    let seatStates = new Map();           // key: seatNum, value: 'available'|'locked'|'sold' (locked includes owner)
-    let lockOwners = new Map();           // seatNum -> sessionId or 'temp'
-    let lockTimers = new Map();           // seatNum -> timeoutId
-    let currentSelectedSeats = new Set(); // seats selected by UI
-    let currentBookingId = null;
-    let currentSessionId = Math.random().toString(36).substring(2, 10);
-    let socketSimulationListeners = [];    // event bus for real-time seat updates
-    
-    // UI elements
-    const seatGridDiv = document.getElementById('dynamicSeatGrid');
-    const selectedSeatsSpan = document.getElementById('selectedSeatsList');
-    const totalAmountSpan = document.getElementById('totalAmount');
-    const proceedBtn = document.getElementById('proceedPaymentBtn');
-    const ticketSection = document.getElementById('ticketSection');
-    const liveFeedDiv = document.getElementById('liveFeed');
-    const tenantSelector = document.getElementById('tenantSelector');
-    
-    // ----- Helper: update UI with simulated WebSocket broadcast -----
-    function emitSeatEvent(type, seats, tripId) {
-      if (tripId !== currentTrip?.id) return;
-      // update feed and refresh seat map rendering
-      addLiveFeedEvent(`${type}: seats ${seats.join(',')}`);
-      renderSeatMapUI();   // full re-render from state
-    }
-    
-    function addLiveFeedEvent(msg) {
-      const feedItem = document.createElement('div');
-      feedItem.className = 'text-xs flex justify-between border-b border-zinc-800/50 py-1';
-      feedItem.innerHTML = `<span>🔄 ${new Date().toLocaleTimeString()}</span><span class="text-emerald-300">${msg}</span>`;
-      liveFeedDiv.prepend(feedItem);
-      if (liveFeedDiv.children.length > 8) liveFeedDiv.removeChild(liveFeedDiv.lastChild);
-    }
-    
-    // simulate global seat lock release (like redis TTL)
-    function releaseLock(seatNum, tripId) {
-      if (currentTrip && currentTrip.id === tripId && seatStates.get(seatNum) === 'locked') {
-        seatStates.set(seatNum, 'available');
-        lockOwners.delete(seatNum);
-        if (lockTimers.has(seatNum)) clearTimeout(lockTimers.get(seatNum));
-        lockTimers.delete(seatNum);
-        emitSeatEvent('SEAT_RELEASED', [seatNum], tripId);
-        renderSeatMapUI();
-        // if this lock was part of selected seats, clear selection too
-        if (currentSelectedSeats.has(seatNum)) {
-          currentSelectedSeats.delete(seatNum);
-          updateSelectedSummary();
-        }
-      }
-    }
-    
-    function lockSeat(seatNum, tripId, ttlSec = 180) {
-      if (!currentTrip || currentTrip.id !== tripId) return false;
-      if (seatStates.get(seatNum) !== 'available') return false;
-      // lock
-      seatStates.set(seatNum, 'locked');
-      lockOwners.set(seatNum, currentSessionId);
-      if (lockTimers.has(seatNum)) clearTimeout(lockTimers.get(seatNum));
-      const timer = setTimeout(() => releaseLock(seatNum, tripId), ttlSec * 1000);
-      lockTimers.set(seatNum, timer);
-      emitSeatEvent('SEAT_LOCKED', [seatNum], tripId);
-      renderSeatMapUI();
-      return true;
-    }
-    
-    function releaseAllLocksForSession() {
-      if (!currentTrip) return;
-      for (let [seat, owner] of lockOwners.entries()) {
-        if (owner === currentSessionId && seatStates.get(seat) === 'locked') {
-          seatStates.set(seat, 'available');
-          if (lockTimers.has(seat)) clearTimeout(lockTimers.get(seat));
-          lockTimers.delete(seat);
-          lockOwners.delete(seat);
-          emitSeatEvent('SEAT_RELEASED', [seat], currentTrip.id);
-        }
-      }
-      renderSeatMapUI();
-    }
-    
-    function markSeatsSold(seatNumbers, tripId) {
-      seatNumbers.forEach(seat => {
-        if (seatStates.get(seat) === 'locked' && lockOwners.get(seat) === currentSessionId) {
-          if (lockTimers.has(seat)) clearTimeout(lockTimers.get(seat));
-          lockTimers.delete(seat);
-          lockOwners.delete(seat);
-        }
-        seatStates.set(seat, 'sold');
-      });
-      emitSeatEvent('SEAT_SOLD', seatNumbers, tripId);
-      renderSeatMapUI();
-    }
-    
-    // initialise seat states for trip (14 seater matatu: 2x7 layout)
-    function initSeatsForTrip(trip) {
-      const capacity = trip.capacity || 14;
-      seatStates.clear();
-      lockOwners.clear();
-      lockTimers.forEach(t => clearTimeout(t));
-      lockTimers.clear();
-      for (let i=1; i<=capacity; i++) {
-        // simulate some pre-sold seats for demo realism
-        if (i === 3 || i === 8) seatStates.set(i, 'sold');
-        else seatStates.set(i, 'available');
-      }
-      currentSelectedSeats.clear();
-      updateSelectedSummary();
-      renderSeatMapUI();
-    }
-    
-    function renderSeatMapUI() {
-      if (!currentTrip) { seatGridDiv.innerHTML = '<div class="text-center py-8">Select a trip</div>'; return; }
-      const capacity = currentTrip.capacity;
-      const cols = 2;   // 2x2 layout for 14 seater
-      const rows = Math.ceil(capacity / cols);
-      let html = '<div class="flex flex-col gap-2 items-center">';
-      for (let r=0; r<rows; r++) {
-        html += '<div class="flex gap-3 justify-center">';
-        for (let c=0; c<cols; c++) {
-          const seatNum = r*cols + c + 1;
-          if (seatNum > capacity) continue;
-          const state = seatStates.get(seatNum) || 'available';
-          let statusClass = 'seat-available';
-          let disabled = false;
-          let extraAttr = '';
-          if (state === 'sold') { statusClass = 'seat-sold'; disabled = true; }
-          else if (state === 'locked') { 
-            const owner = lockOwners.get(seatNum);
-            if (owner === currentSessionId) statusClass = 'seat-selected'; 
-            else { statusClass = 'seat-locked'; disabled = true; }
-          }
-          if (currentSelectedSeats.has(seatNum) && state !== 'sold') statusClass = 'seat-selected';
-          
-          html += `<button data-seat="${seatNum}" class="w-12 h-12 rounded-xl font-bold transition-all ${statusClass} ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}" ${disabled ? 'disabled' : ''}>${seatNum}</button>`;
-        }
-        html += '</div>';
-      }
-      html += '</div>';
-      seatGridDiv.innerHTML = html;
-      // attach event listeners
-      document.querySelectorAll('[data-seat]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          if (btn.disabled) return;
-          const seat = parseInt(btn.dataset.seat);
-          handleSeatClick(seat);
-        });
-      });
-    }
-    
-    function handleSeatClick(seat) {
-      if (!currentTrip) return;
-      const state = seatStates.get(seat);
-      if (state === 'sold') return;
-      if (state === 'locked' && lockOwners.get(seat) !== currentSessionId) return;
-      if (currentSelectedSeats.has(seat)) {
-        // release lock and remove from selected
-        if (state === 'locked' && lockOwners.get(seat) === currentSessionId) {
-          releaseLock(seat, currentTrip.id);
-        }
-        currentSelectedSeats.delete(seat);
-      } else {
-        // lock seat
-        const success = lockSeat(seat, currentTrip.id, 180);
-        if (success) currentSelectedSeats.add(seat);
-        else { addLiveFeedEvent(`⚠️ Seat ${seat} already locked by another session`); return; }
-      }
-      updateSelectedSummary();
-      renderSeatMapUI();
-    }
-    
-    function updateSelectedSummary() {
-      const seats = Array.from(currentSelectedSeats).sort((a,b)=>a-b);
-      selectedSeatsSpan.innerText = seats.length ? seats.join(', ') : '—';
-      const farePerSeat = currentTrip?.activeFare || 150;
-      const total = seats.length * farePerSeat;
-      totalAmountSpan.innerText = `KSh ${total}`;
-      proceedBtn.disabled = seats.length === 0;
-      document.getElementById('modalAmount') && (document.getElementById('modalAmount').innerText = total);
-    }
-    
-    // --- Offline ticket signing & verification (HMAC-SHA256) ---
-    async function generateOfflineTicket(bookingId, trip, seats, tenantKey) {
-      const payload = {
-        bookingId: bookingId,
-        tripId: trip.id,
-        plate: trip.vehiclePlate,
-        seats: seats,
-        expiry: trip.departureTimeISO,
-        issuedAt: new Date().toISOString()
-      };
-      const payloadStr = JSON.stringify(payload);
-      const encoder = new TextEncoder();
-      const keyData = await crypto.subtle.importKey('raw', encoder.encode(tenantKey), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-      const signature = await crypto.subtle.sign('HMAC', keyData, encoder.encode(payloadStr));
-      const signatureHex = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2,'0')).join('');
-      const qrData = btoa(JSON.stringify({ p: payloadStr, s: signatureHex }));
-      return { qrData, payload };
-    }
-    
-    async function verifyOfflineTicket(qrBase64, tenantKey) {
-      try {
-        const decoded = JSON.parse(atob(qrBase64));
-        const payloadStr = decoded.p;
-        const signatureHex = decoded.s;
-        const encoder = new TextEncoder();
-        const keyData = await crypto.subtle.importKey('raw', encoder.encode(tenantKey), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
-        const sigBytes = new Uint8Array(signatureHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-        const isValid = await crypto.subtle.verify('HMAC', keyData, sigBytes, encoder.encode(payloadStr));
-        if (!isValid) return { valid: false, reason: 'Invalid signature' };
-        const payload = JSON.parse(payloadStr);
-        const expiryDate = new Date(payload.expiry);
-        if (expiryDate < new Date()) return { valid: false, reason: 'Ticket expired' };
-        return { valid: true, payload };
-      } catch(e) { return { valid: false, reason: 'Malformed QR data' }; }
-    }
-    
-    // ------- M-Pesa Simulation -------
-    function simulateMpesaPayment(phone, amount, bookingId) {
-      return new Promise((resolve) => {
-        addLiveFeedEvent(`📱 STK Push sent to ${phone} for KSh ${amount}`);
-        setTimeout(() => {
-          const success = Math.random() < 0.85;
-          if (success) {
-            addLiveFeedEvent(`✅ Payment success! Booking ${bookingId} confirmed.`);
-            resolve({ success: true, mpesaCode: 'MPESA' + Math.floor(Math.random()*100000) });
-          } else {
-            addLiveFeedEvent(`❌ Payment failed: insufficient balance / timeout`);
-            resolve({ success: false });
-          }
-        }, 1800);
-      });
-    }
-    
-    // Booking & Payment final
-    async function completeBooking() {
-      if (!currentTrip || currentSelectedSeats.size === 0) return;
-      const seatsArray = Array.from(currentSelectedSeats);
-      const total = seatsArray.length * (currentTrip.activeFare || 150);
-      const modal = document.getElementById('mpesaModal');
-      document.getElementById('modalAmount').innerText = total;
-      modal.classList.remove('hidden');
-      const phoneInput = document.getElementById('mpesaPhone');
-      phoneInput.value = '0712345678';
-      
-      const confirmPay = async () => {
-        const phone = phoneInput.value.trim();
-        if (!phone) { alert('Enter phone number'); return; }
-        modal.classList.add('hidden');
-        const tempBookingId = 'BK' + Date.now() + Math.floor(Math.random()*1000);
-        addLiveFeedEvent(`⏳ Processing payment for booking ${tempBookingId}...`);
-        const result = await simulateMpesaPayment(phone, total, tempBookingId);
-        if (result.success) {
-          // commit seats as sold
-          markSeatsSold(seatsArray, currentTrip.id);
-          currentSelectedSeats.clear();
-          updateSelectedSummary();
-          // generate offline ticket
-          const tenantSecret = currentTenantSecret;
-          const tripData = currentTrip;
-          const ticket = await generateOfflineTicket(tempBookingId, tripData, seatsArray, tenantSecret);
-          // display QR & ticket
-          ticketSection.classList.remove('hidden');
-          document.getElementById('bookingIdDisplay').innerText = tempBookingId;
-          document.getElementById('tripDisplay').innerText = `${tripData.routeName} | ${tripData.vehiclePlate}`;
-          document.getElementById('ticketSeats').innerText = seatsArray.join(',');
-          document.getElementById('ticketExpiry').innerText = new Date(tripData.departureTimeISO).toLocaleString();
-          document.getElementById('qrCodeContainer').innerHTML = '';
-          new QRCode(document.getElementById('qrCodeContainer'), { text: ticket.qrData, width: 120, height: 120 });
-          // store QR for conductor demo
-          document.getElementById('verifyQrInput').value = ticket.qrData;
-          addLiveFeedEvent(`🎫 Ticket generated & signed. QR ready for offline verification.`);
-          proceedBtn.disabled = true;
-          renderSeatMapUI();
-        } else {
-          // release locks on failure
-          seatsArray.forEach(seat => {
-            if (seatStates.get(seat) === 'locked' && lockOwners.get(seat) === currentSessionId) releaseLock(seat, currentTrip.id);
-          });
-          currentSelectedSeats.clear();
-          updateSelectedSummary();
-          renderSeatMapUI();
-          alert('Payment failed. Seats released.');
-        }
-      };
-      document.getElementById('confirmMpesaPay').onclick = confirmPay;
-      document.getElementById('cancelMpesa').onclick = () => modal.classList.add('hidden');
-    }
-    
-    // ---- Trip Data & Initialization ----
-    const demoRoutes = [
-      { id: 'r1', source: 'Ngara', destination: 'Kencom', baseFare: 120 },
-      { id: 'r2', source: 'Rongai', destination: 'CBD', baseFare: 150 }
-    ];
-    const tripsDb = {
-      r1: [
-        { id: 't101', vehiclePlate: 'KCD 123M', departureTime: '08:30 AM', departureTimeISO: new Date(Date.now()+3600000).toISOString(), capacity: 14, activeFare: 120, routeName: 'Ngara → Kencom' },
-        { id: 't102', vehiclePlate: 'KDA 456Q', departureTime: '10:15 AM', departureTimeISO: new Date(Date.now()+7200000).toISOString(), capacity: 14, activeFare: 120, routeName: 'Ngara → Kencom' }
-      ],
-      r2: [
-        { id: 't201', vehiclePlate: 'KBZ 789X', departureTime: '07:45 AM', departureTimeISO: new Date(Date.now()+5400000).toISOString(), capacity: 14, activeFare: 150, routeName: 'Rongai → CBD' }
-      ]
-    };
-    
-    window.tripSelection = function() {
-      return {
-        routes: demoRoutes,
-        selectedRouteId: 'r1',
-        availableTrips: tripsDb['r1'],
-        selectedTrip: tripsDb['r1'][0],
-        initTrips() { this.updateTrips(); },
-        updateTrips() {
-          this.availableTrips = tripsDb[this.selectedRouteId] || [];
-          if (this.availableTrips.length) this.selectedTrip = this.availableTrips[0];
-          this.onTripChange();
-        },
-        onTripChange() {
-          if (!this.selectedTrip) return;
-          currentTrip = { ...this.selectedTrip, activeFare: this.selectedTrip.activeFare };
-          releaseAllLocksForSession();
-          initSeatsForTrip(currentTrip);
-          currentSelectedSeats.clear();
-          updateSelectedSummary();
-          ticketSection.classList.add('hidden');
-          proceedBtn.disabled = true;
-          addLiveFeedEvent(`🚍 Trip changed: ${currentTrip.routeName} at ${currentTrip.departureTime}`);
-        }
-      };
-    };
-    
-    proceedBtn.addEventListener('click', completeBooking);
-    tenantSelector.addEventListener('change', (e) => {
-      currentTenantSecret = e.target.value === 'sacco_simba' ? 'simba_sacco_secret_2026' : 'nganya_express_secret_2026';
-      addLiveFeedEvent(`🔐 Tenant switched, secret updated. HMAC signing active.`);
-    });
-    
-    // Conductor verification logic
-    document.getElementById('verifyTicketBtn').addEventListener('click', async () => {
-      const qrInput = document.getElementById('verifyQrInput').value.trim();
-      if (!qrInput) { alert('Paste QR ticket data'); return; }
-      const resultDiv = document.getElementById('verifyResult');
-      const tenantSecret = currentTenantSecret;
-      const verification = await verifyOfflineTicket(qrInput, tenantSecret);
-      if (verification.valid) {
-        resultDiv.className = 'mt-3 text-xs rounded-lg p-2 bg-emerald-900/40 text-emerald-200';
-        resultDiv.innerHTML = `✅ VALID TICKET | Booking: ${verification.payload.bookingId} | Seats: ${verification.payload.seats.join(',')} | Conductor: Boarding granted.`;
-      } else {
-        resultDiv.className = 'mt-3 text-xs rounded-lg p-2 bg-red-900/40 text-red-200';
-        resultDiv.innerHTML = `❌ Invalid ticket: ${verification.reason || 'Tampered data'}`;
-      }
-      resultDiv.classList.remove('hidden');
-    });
-    
-    // initial load
-    setTimeout(() => {
-      const initialTrip = tripsDb['r1'][0];
-      currentTrip = { ...initialTrip, activeFare: initialTrip.activeFare };
-      initSeatsForTrip(currentTrip);
-      updateSelectedSummary();
-      lucide.createIcons();
-    }, 100);
-    window.addEventListener('load', () => lucide.createIcons());
-  </script>
+<!-- MODALS -->
+<div id="busModal" class="modal-overlay hidden"><div class="glass-card p-6 w-[90%] max-w-md"><h3 class="text-lg font-bold mb-4">Bus Asset</h3><div id="busFormError" class="error-message hidden mb-4"></div><div class="space-y-4"><input type="text" id="busPlate" class="w-full input-field" placeholder="License Plate"><input type="number" id="busCapacity" class="w-full input-field" placeholder="Capacity"><input type="text" id="busDriver" class="w-full input-field" placeholder="Driver Name"><select id="busStatus" class="w-full input-field"><option value="active">Active</option><option value="maintenance">Maintenance</option><option value="inactive">Inactive</option></select></div><div class="flex gap-3 mt-6"><button class="flex-1 py-2 bg-zinc-700 rounded-lg closeModal">Cancel</button><button id="saveBusBtn" class="flex-1 btn-primary py-2 rounded-lg">Save</button></div></div></div>
+<div id="routeModal" class="modal-overlay hidden"><div class="glass-card p-6 w-[90%] max-w-md"><h3 class="text-lg font-bold mb-4">Route Corridor</h3><div id="routeFormError" class="error-message hidden mb-4"></div><div class="space-y-4"><input type="text" id="routeSource" class="w-full input-field" placeholder="From"><input type="text" id="routeDestination" class="w-full input-field" placeholder="To"><input type="number" id="routeFare" class="w-full input-field" placeholder="Base Fare (KSh)"><input type="number" id="routeDistance" class="w-full input-field" placeholder="Distance (km)"></div><div class="flex gap-3 mt-6"><button class="flex-1 py-2 bg-zinc-700 rounded-lg closeModal">Cancel</button><button id="saveRouteBtn" class="flex-1 btn-primary py-2 rounded-lg">Save</button></div></div></div>
+<div id="tripModal" class="modal-overlay hidden"><div class="glass-card p-6 w-[90%] max-w-md"><h3 class="text-lg font-bold mb-4">Trip Manifest</h3><div id="tripFormError" class="error-message hidden mb-4"></div><div class="space-y-4"><select id="tripRoute" class="w-full input-field"><option>Select route</option></select><select id="tripBus" class="w-full input-field"><option>Select bus</option></select><input type="datetime-local" id="tripDeparture" class="w-full input-field"><input type="number" id="tripFare" class="w-full input-field" placeholder="Fare override (optional)"></div><div class="flex gap-3 mt-6"><button class="flex-1 py-2 bg-zinc-700 rounded-lg closeModal">Cancel</button><button id="saveTripBtn" class="flex-1 btn-primary py-2 rounded-lg">Schedule</button></div></div></div>
+<div id="deleteModal" class="modal-overlay hidden"><div class="glass-card p-6 w-[90%] max-w-sm text-center"><i data-lucide="alert-triangle" class="w-12 h-12 text-red-400 mx-auto mb-3"></i><h3 class="text-lg font-bold mb-2">Confirm Deletion</h3><p class="text-zinc-400 mb-6 text-sm" id="deleteMsg">Permanent removal?</p><div class="flex gap-3"><button id="cancelDeleteBtn" class="flex-1 py-2 bg-zinc-700 rounded-lg">Cancel</button><button id="confirmDeleteBtn" class="flex-1 btn-danger py-2 rounded-lg">Delete</button></div></div></div>
+<div id="mpesaModal" class="modal-overlay hidden"><div class="glass-card p-6 w-[90%] max-w-sm text-center"><i data-lucide="smartphone" class="w-12 h-12 text-emerald-400 mx-auto mb-2"></i><h3 class="text-xl font-bold">M-Pesa Express</h3><p class="text-sm text-zinc-300 mt-1">Enter phone number</p><input type="tel" id="mpesaPhone" placeholder="0712345678" class="w-full mt-3 input-field text-center"><div class="flex gap-2 mt-5"><button class="flex-1 py-2 bg-zinc-700 rounded-lg closeModal">Cancel</button><button id="confirmMpesaPay" class="flex-1 btn-primary py-2 rounded-lg font-semibold flex items-center justify-center gap-2"><span>Pay KSh <span id="modalAmount">0</span></span><span id="mpesaSpinner" class="spinner hidden"></span></button></div><p class="text-[10px] text-zinc-500 mt-3">Demo • 85% approval simulation</p></div></div>
+
+<script>
+  // =============== ENTERPRISE MULTI-TENANT CORE ===============
+  const APP = { state: { user: null, tenant: null, role: null, trip: null, sessionId: Math.random().toString(36)+Date.now(), tenantSecret: null }, locks: { seats: new Map(), owners: new Map(), timers: new Map(), selected: new Set(), cleanup(){ this.timers.forEach(clearTimeout); this.timers.clear(); this.seats.clear(); this.owners.clear(); this.selected.clear(); } }, modals: { closeAll(){ document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.add('hidden')); } } };
+  const DataStore = { safe: { get(k){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):[]; }catch(e){ return []; } }, set(k,d){ try{ localStorage.setItem(k,JSON.stringify(d)); return true; }catch(e){ return false; } } }, getBuses:()=>DataStore.safe.get(`${APP.state.tenant}:buses`).filter(b=>b?.id&&b.plate&&b.capacity>0), setBuses:d=>DataStore.safe.set(`${APP.state.tenant}:buses`,d), getRoutes:()=>DataStore.safe.get(`${APP.state.tenant}:routes`).filter(r=>r?.id&&r.source), setRoutes:d=>DataStore.safe.set(`${APP.state.tenant}:routes`,d), getTrips:()=>DataStore.safe.get(`${APP.state.tenant}:trips`).filter(t=>t?.id), setTrips:d=>DataStore.safe.set(`${APP.state.tenant}:trips`,d), seedIfEmpty:(tenant)=>{ if(DataStore.safe.get(`${tenant}:buses`).length===0){ const buses=tenant==='sacco_simba'?[{id:"b1",plate:"KCD 777X",capacity:14,driver:"Omari",status:"active"},{id:"b2",plate:"KCA 888Y",capacity:14,driver:"Mwangi",status:"active"}]:[{id:"bn1",plate:"KCH 420K",capacity:14,driver:"Chalo",status:"active"}]; DataStore.safe.set(`${tenant}:buses`,buses); } if(DataStore.safe.get(`${tenant}:routes`).length===0){ const routes=tenant==='sacco_simba'?[{id:"r1",source:"Nairobi CBD",destination:"Thika",baseFare:150,distance:45},{id:"r2",source:"Nairobi CBD",destination:"Machakos",baseFare:250,distance:62}]:[{id:"rn1",source:"Ngara",destination:"Rongai",baseFare:120,distance:28}]; DataStore.safe.set(`${tenant}:routes`,routes); } if(DataStore.safe.get(`${tenant}:trips`).length===0){ const rts=DataStore.safe.get(`${tenant}:routes`),bus=DataStore.safe.get(`${tenant}:buses`)[0]; if(rts[0]&&bus){ const dep=new Date(); dep.setHours(dep.getHours()+2); DataStore.safe.set(`${tenant}:trips`,[{id:"t1",routeId:rts[0].id,busId:bus.id,departureTime:dep.toISOString(),routeName:`${rts[0].source}→${rts[0].destination}`,vehiclePlate:bus.plate,activeFare:rts[0].baseFare,capacity:bus.capacity}]); } } } };
+  const Utils = { toast:(msg,type='info')=>{ const d=document.createElement('div'); d.className=`fixed bottom-6 right-6 px-5 py-3 rounded-xl border text-sm font-semibold backdrop-blur-md z-[9999] ${type==='error'?'bg-red-950/80 border-red-500/50 text-red-200':'bg-emerald-950/80 border-emerald-500/50 text-emerald-200'}`; d.innerText=msg; document.body.appendChild(d); setTimeout(()=>d.remove(),4000); }, showError:(id,msg)=>{ const e=document.getElementById(id); if(e){ e.innerText=msg; e.classList.remove('hidden');} }, clearError:id=>{ const e=document.getElementById(id); if(e)e.classList.add('hidden'); }, formatTime:iso=>{ try{ return new Date(iso).toLocaleString('en-KE'); }catch{ return '—';} }, base64Encode:(str)=>btoa(Array.from(new TextEncoder().encode(str)).map(b=>String.fromCharCode(b)).join('')), base64Decode:(b64)=>new TextDecoder().decode(Uint8Array.from(atob(b64),c=>c.charCodeAt(0))) };
+  // AUTH
+  function handleAuth(){ const tenant=document.getElementById('authTenant').value,email=document.getElementById('authEmail').value.trim(),role=document.getElementById('selectedRole').value; Utils.clearError('authError'); if(!tenant||!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) return Utils.showError('authError','Valid tenant + email required'); document.getElementById('authSubmit').disabled=true; document.getElementById('authSpinner').classList.remove('hidden'); setTimeout(()=>{ try{ APP.state={user:{email,role,tenant},tenant,role,sessionId:Math.random().toString(36)+Date.now(),tenantSecret:tenant==='sacco_simba'?'simba_secret':'nganya_secret',trip:null,locks:{seats:new Map(),owners:new Map(),timers:new Map(),selected:new Set(),cleanup:function(){ this.timers.forEach(clearTimeout); this.timers.clear(); this.seats.clear(); this.owners.clear(); this.selected.clear(); }}}; DataStore.seedIfEmpty(tenant); document.getElementById('authOverlay').classList.add('hidden'); document.getElementById('mainApp').classList.remove('hidden'); document.getElementById('userInfo').innerText=`📧 ${email.split('@')[0]}`; document.getElementById('roleDisplay').innerText=role==='admin'?'⚙️ Admin':'👤 Commuter'; document.getElementById('tenantDisplay').innerText=tenant==='sacco_simba'?'Simba Sacco':'Nganya Express'; document.getElementById('tenantSelector').value=tenant; if(role==='commuter') document.getElementById('adminNavTab').classList.add('hidden'); else document.getElementById('adminNavTab').classList.remove('hidden'); initApp(); }catch(e){ Utils.showError('authError','Auth failure'); }finally{ document.getElementById('authSubmit').disabled=false; document.getElementById('authSpinner').classList.add('hidden'); } },500); }
+  document.getElementById('authSubmit').addEventListener('click',handleAuth); document.getElementById('roleCommuter').addEventListener('click',function(){ document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('border-emerald-500','bg-emerald-500/20','text-emerald-400','font-semibold')); this.classList.add('border-emerald-500','bg-emerald-500/20','text-emerald-400','font-semibold'); document.getElementById('selectedRole').value='commuter'; }); document.getElementById('roleAdmin').addEventListener('click',function(){ document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('border-emerald-500','bg-emerald-500/20','text-emerald-400','font-semibold')); this.classList.add('border-emerald-500','bg-emerald-500/20','text-emerald-400','font-semibold'); document.getElementById('selectedRole').value='admin'; }); document.getElementById('logoutBtn').addEventListener('click',()=>{ APP.state.locks?.cleanup(); document.getElementById('authOverlay').classList.remove('hidden'); document.getElementById('mainApp').classList.add('hidden'); });
+  // Seat engine
+  function releaseLock(seat,tripId){ if(!APP.state.trip||APP.state.trip.id!==tripId) return; if(APP.state.locks.seats.get(seat)!=='locked') return; APP.state.locks.seats.set(seat,'available'); APP.state.locks.owners.delete(seat); if(APP.state.locks.timers.has(seat)) clearTimeout(APP.state.locks.timers.get(seat)); APP.state.locks.timers.delete(seat); addLiveFeedEvent(`SEAT ${seat} released`); renderSeatMap(); if(APP.state.locks.selected.has(seat)){ APP.state.locks.selected.delete(seat); updateSelectedSummary(); } }
+  function lockSeat(seat,tripId,ttl=180){ if(!APP.state.trip||APP.state.trip.id!==tripId||APP.state.locks.seats.get(seat)!=='available') return false; APP.state.locks.seats.set(seat,'locked'); APP.state.locks.owners.set(seat,APP.state.sessionId); if(APP.state.locks.timers.has(seat)) clearTimeout(APP.state.locks.timers.get(seat)); const tid=setTimeout(()=>releaseLock(seat,tripId),ttl*1000); APP.state.locks.timers.set(seat,tid); addLiveFeedEvent(`SEAT ${seat} locked (180s)`); renderSeatMap(); return true; }
+  function markSeatsSold(seats,tripId){ seats.forEach(s=>{ if(APP.state.locks.timers.has(s)) clearTimeout(APP.state.locks.timers.get(s)); APP.state.locks.owners.delete(s); APP.state.locks.seats.set(s,'sold'); }); addLiveFeedEvent(`SOLD: ${seats.join(',')}`); renderSeatMap(); }
+  function initSeats(capacity){ APP.state.locks.seats.clear(); APP.state.locks.owners.clear(); APP.state.locks.timers.forEach(clearTimeout); APP.state.locks.timers.clear(); APP.state.locks.selected.clear(); for(let i=1;i<=capacity;i++) APP.state.locks.seats.set(i,'available'); updateSelectedSummary(); renderSeatMap(); }
+  function renderSeatMap(){ const grid=document.getElementById('dynamicSeatGrid'); if(!APP.state.trip){ grid.innerHTML='<div class="text-center text-zinc-500 py-8">Select a trip</div>'; return; } const cap=APP.state.trip.capacity||14; let html='<div class="grid grid-cols-3 gap-2 max-w-xs mx-auto">'; for(let i=1;i<=cap;i++){ const state=APP.state.locks.seats.get(i); let cls='seat-available',disabled=false; if(state==='sold'){ cls='seat-sold'; disabled=true; }else if(state==='locked'){ if(APP.state.locks.owners.get(i)===APP.state.sessionId) cls='seat-selected'; else{ cls='seat-locked'; disabled=true; } } html+=`<button data-seat="${i}" class="w-12 h-12 rounded-xl font-bold transition-all ${cls}" ${disabled?'disabled':''}>${i}</button>`; } html+='</div>'; grid.innerHTML=html; document.querySelectorAll('[data-seat]').forEach(btn=>{ btn.addEventListener('click',()=>{ if(btn.hasAttribute('disabled')) return; handleSeatClick(parseInt(btn.dataset.seat)); }); }); }
+  function handleSeatClick(seat){ if(!APP.state.trip) return; const state=APP.state.locks.seats.get(seat); if(APP.state.locks.selected.has(seat)){ if(state==='locked'&&APP.state.locks.owners.get(seat)===APP.state.sessionId) releaseLock(seat,APP.state.trip.id); APP.state.locks.selected.delete(seat); }else{ if(lockSeat(seat,APP.state.trip.id,180)) APP.state.locks.selected.add(seat); else{ Utils.toast(`Seat ${seat} locked by another session`,'error'); return; } } updateSelectedSummary(); renderSeatMap(); }
+  function updateSelectedSummary(){ const seats=Array.from(APP.state.locks.selected).sort((a,b)=>a-b); document.getElementById('selectedSeatsList').innerText=seats.length?seats.join(', '):'—'; const fare=APP.state.trip?.activeFare||0; const total=seats.length*fare; document.getElementById('totalAmount').innerText=`KSh ${total}`; document.getElementById('proceedPaymentBtn').disabled=seats.length===0; document.getElementById('modalAmount').innerText=total; }
+  // Cryptographic tickets
+  async function generateTicket(bookingId,trip,seats,secret){ const payload={bookingId,tripId:trip.id,plate:trip.vehiclePlate,seats,expiry:trip.departureTime,issued:new Date().toISOString()}; const str=JSON.stringify(payload); const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']); const sig=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(str)); const sigHex=Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join(''); const envelope=JSON.stringify({p:str,s:sigHex}); return {qrData:Utils.base64Encode(envelope),payload}; }
+  async function verifyTicket(qr,secret){ try{ const dec=Utils.base64Decode(qr); const env=JSON.parse(dec); const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['verify']); const sigBytes=new Uint8Array(env.s.match(/.{2}/g).map(b=>parseInt(b,16))); const valid=await crypto.subtle.verify('HMAC',key,sigBytes,new TextEncoder().encode(env.p)); if(!valid) return {valid:false,reason:'Invalid signature'}; const payload=JSON.parse(env.p); if(new Date(payload.expiry)<new Date()) return {valid:false,reason:'Expired ticket'}; return {valid:true,payload}; }catch(e){ return {valid:false,reason:'Malformed data'}; } }
+  // UI Binding
+  const liveFeedDiv=document.getElementById('liveFeed'); function addLiveFeedEvent(msg){ if(!liveFeedDiv) return; const d=document.createElement('div'); d.className='text-[11px] font-mono flex justify-between border-b border-zinc-800/40 py-1.5'; d.innerHTML=`<span class="text-zinc-500">${new Date().toLocaleTimeString()}</span><span class="text-emerald-300 truncate">${msg}</span>`; liveFeedDiv.prepend(d); while(liveFeedDiv.children.length>12) liveFeedDiv.removeChild(liveFeedDiv.lastChild); }
+  function updateTripsUI(){ const routes=DataStore.getRoutes(); const trips=DataStore.getTrips(); const buses=DataStore.getBuses(); const busMap=new Map(buses.map(b=>[b.id,b])); const routeSel=document.getElementById('routeSelect'),tripSel=document.getElementById('tripSelect'); routeSel.innerHTML=routes.length?routes.map(r=>`<option value="${r.id}">${r.source} → ${r.destination} (KSh ${r.baseFare})</option>`).join(''):'<option>No routes</option>'; routeSel.onchange=()=>{ const rid=routeSel.value; const flt=trips.filter(t=>t.routeId===rid); tripSel.innerHTML=flt.length?flt.map(t=>{const b=busMap.get(t.busId); return `<option value="${t.id}">${Utils.formatTime(t.departureTime)} • ${b?.plate||'?'}</option>`;}).join(''):'<option>No departures</option>'; tripSel.value=''; }; tripSel.onchange=()=>{ const tid=tripSel.value; if(!tid){ APP.state.trip=null; APP.state.locks.cleanup(); document.getElementById('ticketSection').classList.add('hidden'); renderSeatMap(); return; } const t=trips.find(x=>x.id===tid); const b=busMap.get(t?.busId); if(t&&b){ APP.state.trip={...t,capacity:b.capacity,vehiclePlate:b.plate}; initSeats(b.capacity); document.getElementById('ticketSection').classList.add('hidden'); addLiveFeedEvent(`Trip selected: ${t.routeName}`); } }; routeSel.dispatchEvent(new Event('change')); }
+  document.getElementById('proceedPaymentBtn').addEventListener('click',()=>{ if(!APP.state.trip||APP.state.locks.selected.size===0) return; document.getElementById('mpesaModal').classList.remove('hidden'); document.getElementById('mpesaPhone').value='0712345678'; }); document.getElementById('confirmMpesaPay').addEventListener('click',async function(){ const phone=document.getElementById('mpesaPhone').value.trim(); if(!phone.match(/^07\d{8}$/)) return Utils.toast('Invalid M-Pesa number','error'); const seats=Array.from(APP.state.locks.selected).sort((a,b)=>a-b); const tripSnapshot={...APP.state.trip}; this.disabled=true; document.getElementById('mpesaSpinner').classList.remove('hidden'); addLiveFeedEvent(`Processing payment for ${seats.length} seats...`); await new Promise(r=>setTimeout(r,1500)); const success=Math.random()<0.85; if(success){ addLiveFeedEvent(`Payment confirmed`); markSeatsSold(seats,tripSnapshot.id); const bookingId='BK'+Date.now()+Math.floor(Math.random()*1000); const ticket=await generateTicket(bookingId,tripSnapshot,seats,APP.state.tenantSecret); document.getElementById('bookingIdDisplay').innerText=bookingId; document.getElementById('tripDisplay').innerText=`${tripSnapshot.routeName} • ${tripSnapshot.vehiclePlate}`; document.getElementById('ticketSeats').innerText=seats.join(', '); document.getElementById('ticketExpiry').innerText=Utils.formatTime(tripSnapshot.departureTime); document.getElementById('qrCodeContainer').innerHTML=''; new QRCode(document.getElementById('qrCodeContainer'),{text:ticket.qrData,width:120,height:120}); document.getElementById('verifyQrInput').value=ticket.qrData; document.getElementById('ticketSection').classList.remove('hidden'); Utils.toast('Booking confirmed!','success'); }else{ addLiveFeedEvent(`Payment failed`); seats.forEach(s=>releaseLock(s,tripSnapshot.id)); Utils.toast('Transaction declined, seats released','error'); } APP.state.locks.selected.clear(); updateSelectedSummary(); APP.modals.closeAll(); this.disabled=false; document.getElementById('mpesaSpinner').classList.add('hidden'); }); document.getElementById('verifyTicketBtn').addEventListener('click',async()=>{ const raw=document.getElementById('verifyQrInput').value.trim(); if(!raw) return; const res=await verifyTicket(raw,APP.state.tenantSecret); const div=document.getElementById('verifyResult'); if(res.valid){ div.className='mt-3 text-xs rounded-lg p-2 bg-emerald-900/40 text-emerald-200'; div.innerHTML=`✅ VALID | ID: ${res.payload.bookingId} | Seats: ${res.payload.seats.join(',')}`; }else{ div.className='mt-3 text-xs rounded-lg p-2 bg-red-900/40 text-red-200'; div.innerHTML=`❌ ${res.reason}`; } div.classList.remove('hidden'); }); document.getElementById('tenantSelector').addEventListener('change',(e)=>{ APP.state.tenant=e.target.value; APP.state.tenantSecret=e.target.value==='sacco_simba'?'simba_secret':'nganya_secret'; APP.state.locks.cleanup(); APP.state.trip=null; document.getElementById('ticketSection').classList.add('hidden'); DataStore.seedIfEmpty(e.target.value); updateTripsUI(); addLiveFeedEvent(`Switched to ${e.target.value}`); });
+  // ADMIN
+  let editingId=null,deleteTarget=null; function updateAdminDashboard(){ const buses=DataStore.getBuses(),routes=DataStore.getRoutes(),trips=DataStore.getTrips(); document.getElementById('statBuses').innerText=buses.length; document.getElementById('statRoutes').innerText=routes.length; document.getElementById('statTrips').innerText=trips.length; document.getElementById('statRevenue').innerText=`KSh ${(buses.length*12400).toLocaleString()}`; const busDiv=document.getElementById('busesTable'); busDiv.innerHTML=buses.length?buses.map(b=>`<div class="table-row flex justify-between items-center text-sm"><div><p class="font-mono text-emerald-400">${b.plate}</p><p class="text-xs text-zinc-400">${b.capacity} seats • ${b.driver}</p></div><div class="flex gap-2"><span class="badge-status ${b.status==='active'?'badge-active':'badge-inactive'}">${b.status}</span><button onclick="editBus('${b.id}')" class="px-2 py-1 bg-blue-600/40 rounded text-xs">Edit</button><button onclick="openDeleteModal('bus','${b.id}','${b.plate}')" class="px-2 py-1 bg-red-600/40 rounded text-xs">Del</button></div></div>`).join(''):'<div class="text-center py-8">No buses</div>'; const routeDiv=document.getElementById('routesTable'); routeDiv.innerHTML=routes.length?routes.map(r=>`<div class="table-row flex justify-between items-center text-sm"><div><p>${r.source} → ${r.destination}</p><p class="text-xs text-zinc-400">KSh ${r.baseFare} • ${r.distance}km</p></div><div class="flex gap-2"><button onclick="editRoute('${r.id}')" class="px-2 py-1 bg-blue-600/40 rounded text-xs">Edit</button><button onclick="openDeleteModal('route','${r.id}','${r.source}→${r.destination}')" class="px-2 py-1 bg-red-600/40 rounded text-xs">Del</button></div></div>`).join(''):'<div class="text-center py-8">No routes</div>'; const tripDiv=document.getElementById('tripsTable'); const busMap=new Map(buses.map(b=>[b.id,b])); tripDiv.innerHTML=trips.length?trips.map(t=>{const b=busMap.get(t.busId); return `<div class="table-row flex justify-between items-center text-sm"><div><p>${t.routeName}</p><p class="text-xs text-zinc-400">${Utils.formatTime(t.departureTime)} • ${b?.plate||'?'}</p></div><div class="flex gap-2"><button onclick="editTrip('${t.id}')" class="px-2 py-1 bg-blue-600/40 rounded text-xs">Edit</button><button onclick="openDeleteModal('trip','${t.id}','${t.routeName}')" class="px-2 py-1 bg-red-600/40 rounded text-xs">Del</button></div></div>`; }).join(''):'<div class="text-center py-8">No trips</div>'; }
+  window.editBus=function(id){ const bus=DataStore.getBuses().find(b=>b.id===id); if(bus){ editingId=id; document.getElementById('busPlate').value=bus.plate; document.getElementById('busCapacity').value=bus.capacity; document.getElementById('busDriver').value=bus.driver; document.getElementById('busStatus').value=bus.status; Utils.clearError('busFormError'); document.getElementById('busModal').classList.remove('hidden'); } }; window.editRoute=function(id){ const r=DataStore.getRoutes().find(r=>r.id===id); if(r){ editingId=id; document.getElementById('routeSource').value=r.source; document.getElementById('routeDestination').value=r.destination; document.getElementById('routeFare').value=r.baseFare; document.getElementById('routeDistance').value=r.distance; document.getElementById('routeModal').classList.remove('hidden'); } }; window.editTrip=function(id){ const t=DataStore.getTrips().find(t=>t.id===id); if(t){ editingId=id; populateTripSelects(); document.getElementById('tripRoute').value=t.routeId; document.getElementById('tripBus').value=t.busId; document.getElementById('tripDeparture').value=new Date(t.departureTime).toISOString().slice(0,16); const route=DataStore.getRoutes().find(r=>r.id===t.routeId); document.getElementById('tripFare').value=(t.activeFare===route?.baseFare)?'':t.activeFare; document.getElementById('tripModal').classList.remove('hidden'); } }; function populateTripSelects(){ const routes=DataStore.getRoutes(); const buses=DataStore.getBuses(); document.getElementById('tripRoute').innerHTML='<option value="">—Route—</option>'+routes.map(r=>`<option value="${r.id}">${r.source}→${r.destination}</option>`).join(''); document.getElementById('tripBus').innerHTML='<option value="">—Bus—</option>'+buses.filter(b=>b.status==='active').map(b=>`<option value="${b.id}">${b.plate} (${b.capacity})</option>`).join(''); } document.getElementById('addBusBtn').addEventListener('click',()=>{ editingId=null; document.getElementById('busPlate').value=''; document.getElementById('busCapacity').value='14'; document.getElementById('busDriver').value=''; document.getElementById('busStatus').value='active'; document.getElementById('busModal').classList.remove('hidden'); }); document.getElementById('saveBusBtn').addEventListener('click',()=>{ const plate=document.getElementById('busPlate').value.trim().toUpperCase(),capacity=parseInt(document.getElementById('busCapacity').value),driver=document.getElementById('busDriver').value.trim(),status=document.getElementById('busStatus').value; if(!plate||!capacity||!driver) return Utils.showError('busFormError','All fields required'); const buses=DataStore.getBuses(); if(buses.some(b=>b.plate===plate&&b.id!==editingId)) return Utils.showError('busFormError','Duplicate plate'); if(editingId){ const idx=buses.findIndex(b=>b.id===editingId); if(idx>=0) buses[idx]={...buses[idx],plate,capacity,driver,status}; }else buses.push({id:'B'+Date.now(),plate,capacity,driver,status}); DataStore.setBuses(buses); APP.modals.closeAll(); updateAdminDashboard(); updateTripsUI(); Utils.toast('Bus saved','success'); }); document.getElementById('addRouteBtn').addEventListener('click',()=>{ editingId=null; document.getElementById('routeSource').value=''; document.getElementById('routeDestination').value=''; document.getElementById('routeFare').value=''; document.getElementById('routeDistance').value=''; document.getElementById('routeModal').classList.remove('hidden'); }); document.getElementById('saveRouteBtn').addEventListener('click',()=>{ const source=document.getElementById('routeSource').value.trim(),dest=document.getElementById('routeDestination').value.trim(),fare=parseInt(document.getElementById('routeFare').value),dist=parseInt(document.getElementById('routeDistance').value); if(!source||!dest||!fare||!dist) return Utils.showError('routeFormError','Complete all fields'); const routes=DataStore.getRoutes(); if(routes.some(r=>r.source===source&&r.destination===dest&&r.id!==editingId)) return Utils.showError('routeFormError','Duplicate corridor'); if(editingId){ const idx=routes.findIndex(r=>r.id===editingId); if(idx>=0) routes[idx]={...routes[idx],source,destination:dest,baseFare:fare,distance:dist}; }else routes.push({id:'R'+Date.now(),source,destination:dest,baseFare:fare,distance:dist}); DataStore.setRoutes(routes); APP.modals.closeAll(); updateAdminDashboard(); updateTripsUI(); Utils.toast('Route saved','success'); }); document.getElementById('addTripBtn').addEventListener('click',()=>{ editingId=null; populateTripSelects(); document.getElementById('tripRoute').value=''; document.getElementById('tripBus').value=''; document.getElementById('tripDeparture').value=''; document.getElementById('tripFare').value=''; document.getElementById('tripModal').classList.remove('hidden'); }); document.getElementById('saveTripBtn').addEventListener('click',()=>{ const rid=document.getElementById('tripRoute').value,bid=document.getElementById('tripBus').value,dep=document.getElementById('tripDeparture').value,fareOverride=document.getElementById('tripFare').value; if(!rid||!bid||!dep) return Utils.showError('tripFormError','Select route, bus & departure'); const route=DataStore.getRoutes().find(r=>r.id===rid),bus=DataStore.getBuses().find(b=>b.id===bid); if(!route||!bus) return Utils.showError('tripFormError','Invalid reference'); const trips=DataStore.getTrips(); const newTrip={id:editingId||'T'+Date.now(),routeId:rid,busId:bid,departureTime:new Date(dep).toISOString(),routeName:`${route.source}→${route.destination}`,vehiclePlate:bus.plate,activeFare:fareOverride?parseInt(fareOverride):route.baseFare,capacity:bus.capacity}; if(editingId){ const idx=trips.findIndex(t=>t.id===editingId); if(idx>=0) trips[idx]=newTrip; }else trips.push(newTrip); DataStore.setTrips(trips); APP.modals.closeAll(); updateAdminDashboard(); updateTripsUI(); Utils.toast('Trip scheduled','success'); }); window.openDeleteModal=(type,id,label)=>{ deleteTarget={type,id}; document.getElementById('deleteMsg').innerText=`Delete ${type}: "${label}"?`; document.getElementById('deleteModal').classList.remove('hidden'); }; document.getElementById('confirmDeleteBtn').addEventListener('click',()=>{ if(!deleteTarget) return; const {type,id}=deleteTarget; if(type==='bus') DataStore.setBuses(DataStore.getBuses().filter(b=>b.id!==id)); else if(type==='route') DataStore.setRoutes(DataStore.getRoutes().filter(r=>r.id!==id)); else if(type==='trip') DataStore.setTrips(DataStore.getTrips().filter(t=>t.id!==id)); APP.modals.closeAll(); updateAdminDashboard(); updateTripsUI(); Utils.toast(`${type} deleted`,'success'); deleteTarget=null; }); document.getElementById('cancelDeleteBtn').addEventListener('click',()=>APP.modals.closeAll()); document.querySelectorAll('.closeModal').forEach(btn=>btn.addEventListener('click',()=>APP.modals.closeAll())); document.querySelectorAll('.modal-overlay').forEach(modal=>modal.addEventListener('click',(e)=>{if(e.target===modal)APP.modals.closeAll();})); document.querySelectorAll('.nav-tab').forEach(tab=>tab.addEventListener('click',function(){ const v=this.dataset.view; if(APP.state.role==='commuter'&&v==='admin') return Utils.toast('Admin only','error'); document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active')); this.classList.add('active'); document.getElementById('commuterView').classList.toggle('hidden',v!=='commuter'); document.getElementById('adminView').classList.toggle('hidden',v!=='admin'); if(v==='admin') updateAdminDashboard(); })); document.querySelectorAll('.admin-tab').forEach(tab=>tab.addEventListener('click',function(){ document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active')); this.classList.add('active'); document.querySelectorAll('.admin-content').forEach(c=>c.classList.add('hidden')); document.getElementById(this.dataset.tab+'Tab').classList.remove('hidden'); })); function initApp(){ updateTripsUI(); if(window.lucide) lucide.createIcons(); } window.addEventListener('beforeunload',()=>{ APP.state.locks?.cleanup(); }); document.addEventListener('DOMContentLoaded',()=>{ if(window.lucide) lucide.createIcons(); });
+</script>
 </body>
 </html>
