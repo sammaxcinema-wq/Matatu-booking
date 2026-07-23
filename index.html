@@ -2,199 +2,370 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TransitCore Pro · 43‑Seat Dispatcher</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5" />
+  <title>TransitCore Pro · Dual‑Portal Bus Management</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons (lightweight) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
+    /* Custom overrides & seat layout */
     * { box-sizing: border-box; }
     body {
-      background: radial-gradient(circle at 10% 20%, #0f172a, #020617);
+      background: #0b1120;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      min-height: 100vh;
-      padding: 1.5rem;
       color: #e2e8f0;
+      min-height: 100vh;
+      padding: 1rem;
     }
     .glass {
-      background: rgba(15, 23, 42, 0.65);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(51, 65, 85, 0.6);
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(51, 65, 85, 0.5);
       border-radius: 1.25rem;
     }
     .seat-btn {
-      transition: all 0.15s ease;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.5rem;
       font-weight: 700;
       font-size: 0.7rem;
-      line-height: 1;
-      width: 2.25rem;
-      height: 2.25rem;
-      border-radius: 0.5rem;
-      border: 1px solid transparent;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
       cursor: pointer;
       background: #1e293b;
       color: #94a3b8;
       border-color: #334155;
+      line-height: 1;
     }
-    .seat-btn:hover:not(.booked) { background: #2d3a4f; border-color: #64748b; }
-    .seat-btn.booked { background: #059669; border-color: #34d399; color: #fff; box-shadow: 0 0 12px rgba(5, 150, 105, 0.3); }
-    .seat-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .stat-card { background: rgba(30, 41, 59, 0.6); border-radius: 0.75rem; padding: 0.75rem 1rem; border: 1px solid rgba(51, 65, 85, 0.4); }
+    .seat-btn:hover:not(.booked):not(.selected) { background: #2d3a4f; border-color: #64748b; }
+    .seat-btn.selected { background: #4f46e5; border-color: #818cf8; color: #fff; box-shadow: 0 0 12px rgba(79, 70, 229, 0.4); }
+    .seat-btn.booked { background: #991b1b; border-color: #7f1d1d; color: #fca5a5; cursor: not-allowed; opacity: 0.7; }
+    .seat-btn.admin-booked { background: #b45309; border-color: #d97706; color: #fde68a; cursor: pointer; } /* admin override */
+    .seat-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .input-dark { background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.5rem 0.75rem; color: #f1f5f9; width: 100%; }
     .input-dark:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3); }
     .input-dark::placeholder { color: #475569; }
+    .tab-btn { padding: 0.5rem 1.25rem; border-radius: 0.75rem; font-weight: 600; transition: all 0.2s; cursor: pointer; border: 1px solid transparent; }
+    .tab-btn.active { background: #1e293b; border-color: #4f46e5; color: #e2e8f0; }
+    .tab-btn.inactive { background: transparent; border-color: #334155; color: #94a3b8; }
+    .tab-btn.inactive:hover { background: #1e293b; border-color: #64748b; }
     .badge-peak { background: #d97706; color: #fffbeb; padding: 0.2rem 0.7rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
     .badge-offpeak { background: #334155; color: #cbd5e1; padding: 0.2rem 0.7rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+    .manifest-table th { text-align: left; padding: 0.5rem 0.25rem; border-bottom: 1px solid #1e293b; }
+    .manifest-table td { padding: 0.4rem 0.25rem; border-bottom: 1px solid #1e293b; font-size: 0.8rem; }
+    .manifest-table tr:hover { background: #1e293b; }
+    @media (max-width: 640px) { .seat-btn { width: 2rem; height: 2rem; font-size: 0.6rem; } }
   </style>
 </head>
 <body>
 
-<div id="app" class="max-w-6xl mx-auto space-y-6">
+<div id="app" class="max-w-7xl mx-auto space-y-5">
 
   <!-- HEADER -->
-  <header class="glass p-5 flex flex-wrap items-center justify-between gap-4">
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-        <span class="bg-indigo-600 w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm">🚌</span>
-        TransitCore Pro Dispatcher
-      </h1>
-      <p class="text-sm text-slate-400">43‑Seater Fleet · Manual Fare Override Console</p>
+  <header class="glass px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <span class="bg-indigo-600 w-9 h-9 rounded-xl flex items-center justify-center text-white text-lg font-black">T</span>
+      <div>
+        <h1 class="text-xl font-bold tracking-tight text-white">TransitCore Pro</h1>
+        <p class="text-xs text-slate-400">43‑Seat Fleet · Dual‑Portal</p>
+      </div>
     </div>
-    <button id="peakToggle" class="px-5 py-2 rounded-lg text-sm font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">
-      ❄️ Off‑Peak Mode
-    </button>
+    <div class="flex items-center gap-3">
+      <span id="peakBadge" class="badge-offpeak">❄️ Standard</span>
+      <div class="flex gap-2">
+        <button id="switchCustomer" class="tab-btn active">👤 Customer</button>
+        <button id="switchAdmin" class="tab-btn inactive">⚙️ Admin</button>
+      </div>
+    </div>
   </header>
 
-  <!-- CONTROLS: Route, Fare Override, Expenses -->
-  <div class="glass p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
-    <div>
-      <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Select Route</label>
-      <select id="routeSelect" class="input-dark"></select>
-    </div>
-    <div>
-      <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Manual Base Fare (KSh)</label>
-      <input type="number" id="fareOverride" class="input-dark text-emerald-400 font-mono" value="250" min="0" />
-    </div>
-    <div>
-      <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Misc Expenses (KSh)</label>
-      <input type="number" id="expenseInput" class="input-dark text-rose-400 font-mono" value="0" min="0" placeholder="Tolls, fees…" />
-    </div>
-  </div>
+  <!-- MAIN CONTENT: two portals -->
+  <div id="portalContainer">
+    <!-- CUSTOMER PORTAL -->
+    <div id="customerPortal" class="space-y-5">
+      <!-- Route & Trip Selection -->
+      <div class="glass p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Route Corridor</label>
+          <select id="custRouteSelect" class="input-dark"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Departure Time</label>
+          <input type="datetime-local" id="custDeparture" class="input-dark" value="" />
+        </div>
+        <div class="flex items-end justify-between gap-4">
+          <div>
+            <span class="text-xs text-slate-400">Available Seats</span>
+            <p class="text-2xl font-bold text-indigo-400" id="custAvailSeats">43</p>
+          </div>
+          <div class="text-right">
+            <span class="text-xs text-slate-400">Fare (per seat)</span>
+            <p class="text-lg font-bold text-emerald-400" id="custFareDisplay">KSh 250</p>
+          </div>
+        </div>
+      </div>
 
-  <!-- STATS ROW -->
-  <div class="grid grid-cols-2 md:grid-cols-5 gap-3" id="statsRow">
-    <div class="stat-card"><p class="text-xs text-slate-400">Booked Seats</p><p class="text-xl font-bold text-indigo-400" id="statBooked">0 / 43</p><span class="text-xs text-slate-500" id="statOccupancy">0% Full</span></div>
-    <div class="stat-card"><p class="text-xs text-slate-400">Gross Fare</p><p class="text-xl font-bold text-emerald-400" id="statRevenue">KSh 0</p></div>
-    <div class="stat-card"><p class="text-xs text-slate-400">Total Expenses</p><p class="text-xl font-bold text-rose-400" id="statExpenses">KSh 0</p></div>
-    <div class="stat-card"><p class="text-xs text-slate-400">Net Profit</p><p class="text-xl font-bold" id="statProfit">KSh 0</p></div>
-    <div class="stat-card"><p class="text-xs text-slate-400">Break‑even</p><p class="text-xl font-bold text-amber-400" id="statBreakEven">0 Seats</p></div>
-  </div>
+      <!-- Seat Map + Booking Form row -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Seat Grid -->
+        <div class="lg:col-span-2 glass p-5 space-y-4">
+          <h2 class="text-base font-semibold">Select Your Seats</h2>
+          <div class="max-w-md mx-auto bg-slate-950 p-4 rounded-xl border-2 border-slate-800 space-y-3">
+            <!-- Driver cabin + door -->
+            <div class="flex justify-between items-center pb-2 border-b border-slate-800 text-[10px] text-slate-500 uppercase">
+              <span class="bg-slate-800 px-2 py-0.5 rounded">Driver</span>
+              <span class="bg-slate-800 px-2 py-0.5 rounded">Door</span>
+            </div>
+            <div id="custSeatGrid" class="space-y-2"></div>
+          </div>
+          <div class="flex justify-between items-center mt-2">
+            <span class="text-sm text-slate-400">Selected: <span id="custSelectedCount" class="text-indigo-400 font-bold">0</span></span>
+            <button id="custClearSelection" class="text-xs text-rose-400 hover:text-rose-300">Clear Selection</button>
+          </div>
+        </div>
 
-  <!-- SEATING GRID -->
-  <div class="glass p-5 space-y-4">
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <h2 class="text-base font-semibold text-slate-200">Bus Seating Grid · 43 Capacity</h2>
-      <div class="flex gap-2">
-        <button id="fillAllBtn" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs rounded text-slate-200 border border-slate-700 transition">Fill All Seats</button>
-        <button id="clearAllBtn" class="px-4 py-1.5 bg-rose-950 hover:bg-rose-900 text-xs rounded text-rose-300 border border-rose-800/50 transition">Clear All</button>
+        <!-- Booking Form & Order Summary -->
+        <div class="glass p-5 space-y-4">
+          <h2 class="text-base font-semibold">Passenger Details</h2>
+          <div id="bookingFormContainer">
+            <!-- Dynamic form for each selected seat -->
+            <p class="text-sm text-slate-400">Select seats to fill passenger info.</p>
+          </div>
+          <div class="border-t border-slate-800 pt-3 mt-2">
+            <div class="flex justify-between text-sm"><span>Subtotal (seats × fare)</span><span id="custSubtotal">KSh 0</span></div>
+            <div class="flex justify-between text-sm"><span>Peak Surcharge</span><span id="custSurcharge">KSh 0</span></div>
+            <div class="flex justify-between text-lg font-bold mt-1"><span>Total</span><span id="custTotal">KSh 0</span></div>
+          </div>
+          <button id="custBookBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>Book Selected Seats</button>
+        </div>
+      </div>
+
+      <!-- Ticket Display (after booking) -->
+      <div id="ticketDisplay" class="glass p-5 hidden">
+        <div class="flex items-center gap-3 border-b border-indigo-500/30 pb-2">
+          <span class="text-indigo-400">🎫</span>
+          <h3 class="font-bold">Boarding Pass</h3>
+          <span class="ml-auto text-xs bg-slate-800 px-3 py-1 rounded-full">Ref: <span id="ticketRef">—</span></span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+          <div>
+            <p><span class="text-slate-400">Route:</span> <span id="ticketRoute">—</span></p>
+            <p><span class="text-slate-400">Departure:</span> <span id="ticketDeparture">—</span></p>
+            <p><span class="text-slate-400">Seats:</span> <span id="ticketSeats" class="font-mono">—</span></p>
+            <p><span class="text-slate-400">Passengers:</span> <span id="ticketPassengers">—</span></p>
+          </div>
+          <div class="flex justify-center items-center">
+            <div id="qrPlaceholder" class="bg-white w-28 h-28 rounded-lg flex items-center justify-center text-black text-xs text-center p-1 border border-slate-300">
+              QR placeholder
+            </div>
+          </div>
+        </div>
+        <button id="ticketCloseBtn" class="mt-3 text-sm text-slate-400 hover:text-white">Close Ticket</button>
       </div>
     </div>
 
-    <!-- FLOOR PLAN -->
-    <div class="max-w-md mx-auto bg-slate-950 p-4 rounded-xl border-2 border-slate-800 space-y-3">
-      <!-- Driver cabin + door indicator -->
-      <div class="flex justify-between items-center pb-2 border-b border-slate-800 text-[10px] text-slate-500 uppercase">
-        <span class="bg-slate-800 px-2 py-0.5 rounded">Driver Cabin</span>
-        <span class="bg-slate-800 px-2 py-0.5 rounded">Passenger Door</span>
+    <!-- ADMIN PORTAL -->
+    <div id="adminPortal" class="hidden space-y-5">
+      <!-- Dashboard Stats -->
+      <div class="glass p-5 grid grid-cols-2 md:grid-cols-5 gap-3" id="adminStats">
+        <div class="stat-card"><p class="text-xs text-slate-400">Occupancy</p><p class="text-xl font-bold text-indigo-400" id="adminOccupancy">0 / 43</p><span class="text-xs text-slate-500" id="adminOccupancyPct">0%</span></div>
+        <div class="stat-card"><p class="text-xs text-slate-400">Gross Revenue</p><p class="text-xl font-bold text-emerald-400" id="adminRevenue">KSh 0</p></div>
+        <div class="stat-card"><p class="text-xs text-slate-400">Expenses</p><p class="text-xl font-bold text-rose-400" id="adminExpenses">KSh 0</p></div>
+        <div class="stat-card"><p class="text-xs text-slate-400">Net Yield</p><p class="text-xl font-bold" id="adminProfit">KSh 0</p></div>
+        <div class="stat-card"><p class="text-xs text-slate-400">Break‑Even</p><p class="text-xl font-bold text-amber-400" id="adminBreakEven">0</p></div>
       </div>
 
-      <!-- Seat grid container -->
-      <div id="seatGrid" class="space-y-2"></div>
+      <!-- Admin Controls: route, overrides, peak toggle, expenses -->
+      <div class="glass p-5 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Route</label>
+          <select id="adminRouteSelect" class="input-dark"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Manual Fare Override (KSh)</label>
+          <input type="number" id="adminFareOverride" class="input-dark text-emerald-400 font-mono" value="0" min="0" placeholder="per seat" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Misc Expenses (KSh)</label>
+          <input type="number" id="adminExpenseInput" class="input-dark text-rose-400 font-mono" value="0" min="0" placeholder="Tolls, fees…" />
+        </div>
+        <div class="flex items-end gap-3">
+          <button id="adminPeakToggle" class="px-4 py-2 rounded-lg text-sm font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">❄️ Standard</button>
+          <button id="adminClearAll" class="px-4 py-2 rounded-lg text-sm font-semibold bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800/50">Clear All</button>
+        </div>
+      </div>
+
+      <!-- Admin Seat Grid (with override clicks) -->
+      <div class="glass p-5">
+        <h3 class="text-base font-semibold mb-3">Live Seat Grid (Admin Override)</h3>
+        <div class="max-w-md mx-auto bg-slate-950 p-4 rounded-xl border-2 border-slate-800 space-y-3">
+          <div class="flex justify-between items-center pb-2 border-b border-slate-800 text-[10px] text-slate-500 uppercase">
+            <span class="bg-slate-800 px-2 py-0.5 rounded">Driver</span>
+            <span class="bg-slate-800 px-2 py-0.5 rounded">Door</span>
+          </div>
+          <div id="adminSeatGrid" class="space-y-2"></div>
+        </div>
+        <div class="flex flex-wrap gap-3 mt-4">
+          <button id="adminFillAll" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs rounded text-slate-200 border border-slate-700">Fill All Seats</button>
+          <button id="adminExportCSV" class="px-4 py-1.5 bg-indigo-950 hover:bg-indigo-900 text-xs rounded text-indigo-300 border border-indigo-800/50">Export Manifest (CSV)</button>
+        </div>
+      </div>
+
+      <!-- Manifest Table -->
+      <div class="glass p-5 overflow-x-auto">
+        <h3 class="text-base font-semibold mb-3">Passenger Manifest</h3>
+        <table class="manifest-table w-full text-sm" id="manifestTable">
+          <thead>
+            <tr><th>Seat</th><th>Name</th><th>Phone</th><th>Pickup</th><th>Dropoff</th><th>Fare (KSh)</th><th>Booked By</th></tr>
+          </thead>
+          <tbody id="manifestBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
-
-  <!-- FOOTER HINT -->
-  <p class="text-center text-[11px] text-slate-600 mt-2">Click a seat to toggle booking · Override fare per seat via the input above</p>
 </div>
 
 <script>
-  // ──────────────────────────────────────────────
-  //  DATA: Routes & Seat Generation
-  // ──────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  //  UNIFIED STATE & DATA LAYER (TypeScript-like schema)
+  // ─────────────────────────────────────────────────────────────
 
-  const ROUTES = [
-    { id: 'R-101', name: 'Nairobi CBD – Machakos', baseFare: 250, peakFare: 350, fuel: 4500, crew: 2000, dist: 62 },
-    { id: 'R-239', name: 'Nairobi CBD – Thika', baseFare: 150, peakFare: 200, fuel: 3000, crew: 1500, dist: 44 },
-    { id: 'R-125', name: 'Railways – Ongata Rongai', baseFare: 100, peakFare: 150, fuel: 2200, crew: 1200, dist: 22 },
-    { id: 'R-110', name: 'Nairobi CBD – Kitengela', baseFare: 150, peakFare: 200, fuel: 2800, crew: 1500, dist: 32 },
-    { id: 'R-IC4', name: 'Nairobi – Eldoret', baseFare: 1200, peakFare: 1500, fuel: 18000, crew: 4000, dist: 310 },
+  const DEFAULT_ROUTES = [
+    { id: 'R-101', name: 'Nairobi CBD – Machakos', baseFare: 250, peakFare: 350, fuel: 4500, crew: 2000, waypoints: ['CBD', 'Mlolongo', 'Athi River', 'Machakos'] },
+    { id: 'R-239', name: 'Nairobi CBD – Thika', baseFare: 150, peakFare: 200, fuel: 3000, crew: 1500, waypoints: ['CBD', 'Kasarani', 'Ruiru', 'Thika'] },
+    { id: 'R-125', name: 'Railways – Ongata Rongai', baseFare: 100, peakFare: 150, fuel: 2200, crew: 1200, waypoints: ['Railways', 'Langata', 'Rongai'] },
+    { id: 'R-110', name: 'Nairobi CBD – Kitengela', baseFare: 150, peakFare: 200, fuel: 2800, crew: 1500, waypoints: ['CBD', 'Kitengela'] },
+    { id: 'R-IC4', name: 'Nairobi – Eldoret', baseFare: 1200, peakFare: 1500, fuel: 18000, crew: 4000, waypoints: ['CBD', 'Nakuru', 'Eldoret'] },
   ];
 
-  function generate43Seats() {
+  // Generate 43 seats
+  function generateSeats() {
     return Array.from({ length: 43 }, (_, i) => ({
       id: i + 1,
       label: `S${i + 1}`,
-      booked: false,
+      isBooked: false,
+      bookedBy: null, // 'ADMIN' | 'CUSTOMER' | null
       farePaid: 0,
+      passengerDetails: null, // { name, phone, pickupStage, dropoffStage }
     }));
   }
 
-  // ──────────────────────────────────────────────
-  //  STATE
-  // ──────────────────────────────────────────────
+  // Initial state
+  let state = {
+    selectedRouteId: DEFAULT_ROUTES[0].id,
+    departureTime: new Date(Date.now() + 3600000).toISOString().slice(0, 16), // 1 hour from now
+    isPeak: false,
+    seats: generateSeats(),
+    // Admin overrides
+    manualFareOverride: 0, // 0 means use route fare
+    manualExpenses: 0,
+    // Customer selection (temporary)
+    customerSelectedSeats: [], // seat ids
+    // Bookings (history)
+    bookings: [], // { ref, routeId, departure, seats: [ {seatId, passenger} ], totalPaid }
+    // For ticket display
+    lastTicket: null,
+  };
 
-  let seats = generate43Seats();
-  let selectedRouteId = ROUTES[0].id;
-  let isPeak = false;
-  let customFare = ROUTES[0].baseFare;
-  let manualExpense = 0;
+  // ─────────────────────────────────────────────────────────────
+  //  PERSISTENCE (localStorage)
+  // ─────────────────────────────────────────────────────────────
 
-  // DOM refs
-  const $ = id => document.getElementById(id);
-  const routeSelect = $('routeSelect');
-  const fareInput = $('fareOverride');
-  const expenseInput = $('expenseInput');
-  const seatGrid = $('seatGrid');
-  const peakToggle = $('peakToggle');
+  function saveState() {
+    try {
+      localStorage.setItem('transitcore_state', JSON.stringify(state));
+    } catch (e) {}
+  }
 
-  // ──────────────────────────────────────────────
-  //  ANALYTICS ENGINE
-  // ──────────────────────────────────────────────
+  function loadState() {
+    try {
+      const raw = localStorage.getItem('transitcore_state');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        // Merge with defaults to handle new fields
+        state = { ...state, ...parsed };
+        // Ensure seats exist
+        if (!state.seats || state.seats.length !== 43) {
+          state.seats = generateSeats();
+        }
+        // Ensure each seat has passengerDetails object if needed
+        state.seats.forEach(s => {
+          if (s.isBooked && !s.passengerDetails) {
+            s.passengerDetails = { name: '', phone: '', pickupStage: '', dropoffStage: '' };
+          }
+        });
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  // Load or seed
+  if (!loadState()) {
+    // first run
+    state.seats = generateSeats();
+    state.bookings = [];
+    state.customerSelectedSeats = [];
+    saveState();
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  //  HELPERS
+  // ─────────────────────────────────────────────────────────────
 
   function getRoute() {
-    return ROUTES.find(r => r.id === selectedRouteId) || ROUTES[0];
+    return DEFAULT_ROUTES.find(r => r.id === state.selectedRouteId) || DEFAULT_ROUTES[0];
   }
 
-  function calcAnalytics() {
+  function getEffectiveFare() {
     const route = getRoute();
-    const effectiveFare = isPeak ? route.peakFare : route.baseFare;
-    let totalRevenue = 0;
-    let booked = 0;
+    const base = state.isPeak ? route.peakFare : route.baseFare;
+    // If admin override is set, use that instead (but only for admin actions)
+    // For customer, we use route fare unless admin override is >0 (but we'll handle separately)
+    return base;
+  }
 
-    seats.forEach(s => {
-      if (s.booked) {
-        booked++;
-        totalRevenue += (s.farePaid && s.farePaid > 0) ? s.farePaid : effectiveFare;
+  function getAdminFarePerSeat() {
+    const override = state.manualFareOverride;
+    if (override > 0) return override;
+    return getEffectiveFare();
+  }
+
+  function getOccupancy() {
+    return state.seats.filter(s => s.isBooked).length;
+  }
+
+  function calculateAnalytics() {
+    const route = getRoute();
+    const totalSeats = 43;
+    const booked = getOccupancy();
+    const occupancyPct = (booked / totalSeats) * 100;
+    // Revenue: sum of farePaid for booked seats (if 0, use route fare)
+    let revenue = 0;
+    state.seats.forEach(s => {
+      if (s.isBooked) {
+        revenue += (s.farePaid > 0) ? s.farePaid : getEffectiveFare();
       }
     });
-
-    const occupancy = seats.length > 0 ? (booked / seats.length) * 100 : 0;
-    const expenses = route.fuel + route.crew + manualExpense;
-    const profit = totalRevenue - expenses;
-    const breakEven = expenses > 0 ? Math.ceil(expenses / effectiveFare) : 0;
-
-    return { booked, occupancy, totalRevenue, expenses, profit, breakEven, effectiveFare };
+    const expenses = route.fuel + route.crew + (state.manualExpenses || 0);
+    const profit = revenue - expenses;
+    const breakEven = expenses > 0 ? Math.ceil(expenses / getEffectiveFare()) : 0;
+    return { booked, occupancyPct, revenue, expenses, profit, breakEven };
   }
 
-  // ──────────────────────────────────────────────
-  //  RENDER
-  // ──────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  //  RENDER FUNCTIONS (shared between portals)
+  // ─────────────────────────────────────────────────────────────
 
-  function renderSeats() {
-    // Build grid rows: rows 1-9 (4 seats), row 10 (2 seats), row 11 (5 seats)
+  function renderSeatGrid(containerId, clickHandler, isAdmin = false) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const seats = state.seats;
+    // Build rows: rows 1-9 (4 seats each), row10 (2 seats), row11 (5 seats)
     const indices = [];
-    // Row 1-9: 4 seats each -> seat indices 0..35
     for (let r = 0; r < 9; r++) {
       const row = [];
       for (let c = 0; c < 4; c++) {
@@ -202,202 +373,495 @@
       }
       indices.push(row);
     }
-    // Row 10: seats 36, 37
-    indices.push([36, 37]);
-    // Row 11: rear bench seats 38..42
-    indices.push([38, 39, 40, 41, 42]);
+    indices.push([36, 37]); // row10
+    indices.push([38, 39, 40, 41, 42]); // row11
 
     let html = '';
-    indices.forEach((row, idx) => {
-      const isLastRow = idx === indices.length - 1;
+    indices.forEach((row, rowIdx) => {
+      const isLastRow = rowIdx === indices.length - 1;
       const rowClass = isLastRow ? 'flex justify-between gap-1' : 'flex justify-between gap-4';
 
       html += `<div class="${rowClass}">`;
 
       if (isLastRow) {
-        // rear bench: all seats span full width
+        // rear bench
         row.forEach(seatIdx => {
           const s = seats[seatIdx];
           if (!s) return;
-          html += `<button class="seat-btn flex-1 ${s.booked ? 'booked' : ''}" data-id="${s.id}">${s.id}</button>`;
+          let extraClass = '';
+          if (s.isBooked) extraClass = 'booked';
+          // For admin, we want to distinguish admin vs customer booked
+          if (isAdmin && s.isBooked && s.bookedBy === 'ADMIN') extraClass += ' admin-booked';
+          if (isAdmin && s.isBooked && s.bookedBy === 'CUSTOMER') extraClass += ' booked'; // red
+          // Customer portal: if seat is selected by customer
+          if (!isAdmin && state.customerSelectedSeats.includes(s.id)) extraClass += ' selected';
+          html += `<button class="seat-btn ${extraClass}" data-id="${s.id}" ${s.isBooked && !isAdmin ? 'disabled' : ''}>${s.id}</button>`;
         });
       } else {
-        // left side (first 2 seats)
+        // left side (first 2)
         html += `<div class="flex gap-1.5">`;
         row.slice(0, 2).forEach(seatIdx => {
           const s = seats[seatIdx];
           if (!s) return;
-          html += `<button class="seat-btn ${s.booked ? 'booked' : ''}" data-id="${s.id}">${s.id}</button>`;
+          let extraClass = '';
+          if (s.isBooked) extraClass = 'booked';
+          if (isAdmin && s.isBooked && s.bookedBy === 'ADMIN') extraClass += ' admin-booked';
+          if (!isAdmin && state.customerSelectedSeats.includes(s.id)) extraClass += ' selected';
+          html += `<button class="seat-btn ${extraClass}" data-id="${s.id}" ${s.isBooked && !isAdmin ? 'disabled' : ''}>${s.id}</button>`;
         });
         html += `</div>`;
-        // right side (last 2 seats)
+        // right side (last 2)
         html += `<div class="flex gap-1.5">`;
         row.slice(2, 4).forEach(seatIdx => {
           const s = seats[seatIdx];
           if (!s) return;
-          html += `<button class="seat-btn ${s.booked ? 'booked' : ''}" data-id="${s.id}">${s.id}</button>`;
+          let extraClass = '';
+          if (s.isBooked) extraClass = 'booked';
+          if (isAdmin && s.isBooked && s.bookedBy === 'ADMIN') extraClass += ' admin-booked';
+          if (!isAdmin && state.customerSelectedSeats.includes(s.id)) extraClass += ' selected';
+          html += `<button class="seat-btn ${extraClass}" data-id="${s.id}" ${s.isBooked && !isAdmin ? 'disabled' : ''}>${s.id}</button>`;
         });
         html += `</div>`;
       }
-
       html += `</div>`;
     });
 
-    seatGrid.innerHTML = html;
+    container.innerHTML = html;
 
     // Attach click events
-    seatGrid.querySelectorAll('.seat-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+    container.querySelectorAll('.seat-btn').forEach(btn => {
+      if (btn.disabled) return;
+      btn.addEventListener('click', (e) => {
         const id = parseInt(btn.dataset.id);
-        toggleSeat(id);
+        clickHandler(id);
       });
     });
   }
 
-  function renderStats() {
-    const stats = calcAnalytics();
-    const route = getRoute();
+  function renderCustomerPortal() {
+    // Update route dropdown
+    const routeSelect = document.getElementById('custRouteSelect');
+    routeSelect.innerHTML = DEFAULT_ROUTES.map(r =>
+      `<option value="${r.id}" ${r.id === state.selectedRouteId ? 'selected' : ''}>${r.name}</option>`
+    ).join('');
 
-    $('statBooked').innerHTML = `${stats.booked} / 43`;
-    $('statOccupancy').textContent = `${stats.occupancy.toFixed(1)}% Full`;
-    $('statRevenue').textContent = `KSh ${stats.totalRevenue.toLocaleString()}`;
-    $('statExpenses').textContent = `KSh ${stats.expenses.toLocaleString()}`;
+    // Departure
+    document.getElementById('custDeparture').value = state.departureTime;
 
-    const profitEl = $('statProfit');
+    // Available seats
+    const booked = getOccupancy();
+    document.getElementById('custAvailSeats').textContent = 43 - booked;
+
+    // Fare display
+    const fare = getEffectiveFare();
+    document.getElementById('custFareDisplay').textContent = `KSh ${fare}`;
+
+    // Seat grid
+    renderSeatGrid('custSeatGrid', (seatId) => {
+      // Customer seat click: toggle selection (if not booked)
+      const seat = state.seats.find(s => s.id === seatId);
+      if (!seat || seat.isBooked) return;
+      const idx = state.customerSelectedSeats.indexOf(seatId);
+      if (idx > -1) {
+        state.customerSelectedSeats.splice(idx, 1);
+      } else {
+        state.customerSelectedSeats.push(seatId);
+      }
+      saveState();
+      renderCustomerPortal();
+      updateCustomerSummary();
+    }, false);
+
+    // Update selected count
+    document.getElementById('custSelectedCount').textContent = state.customerSelectedSeats.length;
+
+    // Clear selection
+    document.getElementById('custClearSelection').onclick = () => {
+      state.customerSelectedSeats = [];
+      saveState();
+      renderCustomerPortal();
+      updateCustomerSummary();
+    };
+
+    // Update booking form & summary
+    updateCustomerSummary();
+
+    // Book button state
+    const bookBtn = document.getElementById('custBookBtn');
+    bookBtn.disabled = state.customerSelectedSeats.length === 0;
+  }
+
+  function updateCustomerSummary() {
+    const selected = state.customerSelectedSeats;
+    const fare = getEffectiveFare();
+    const subtotal = selected.length * fare;
+    const surge = state.isPeak ? selected.length * (getRoute().peakFare - getRoute().baseFare) : 0;
+    const total = subtotal + surge;
+
+    document.getElementById('custSubtotal').textContent = `KSh ${subtotal}`;
+    document.getElementById('custSurcharge').textContent = `KSh ${surge}`;
+    document.getElementById('custTotal').textContent = `KSh ${total}`;
+
+    // Build passenger form for each selected seat
+    const formContainer = document.getElementById('bookingFormContainer');
+    if (selected.length === 0) {
+      formContainer.innerHTML = `<p class="text-sm text-slate-400">Select seats to fill passenger info.</p>`;
+      return;
+    }
+
+    let formHtml = '';
+    selected.forEach(seatId => {
+      const seat = state.seats.find(s => s.id === seatId);
+      if (!seat) return;
+      const details = seat.passengerDetails || { name: '', phone: '', pickupStage: '', dropoffStage: '' };
+      formHtml += `
+        <div class="border-b border-slate-800 pb-3 mb-3">
+          <p class="font-mono text-xs text-indigo-400">Seat ${seatId}</p>
+          <div class="grid grid-cols-2 gap-2 mt-1">
+            <input class="input-dark text-xs" placeholder="Full Name" value="${details.name || ''}" data-seat="${seatId}" data-field="name" />
+            <input class="input-dark text-xs" placeholder="Phone" value="${details.phone || ''}" data-seat="${seatId}" data-field="phone" />
+          </div>
+          <div class="grid grid-cols-2 gap-2 mt-1">
+            <select class="input-dark text-xs" data-seat="${seatId}" data-field="pickupStage">
+              <option value="">Pickup</option>
+              ${getRoute().waypoints.map(w => `<option value="${w}" ${details.pickupStage === w ? 'selected' : ''}>${w}</option>`).join('')}
+            </select>
+            <select class="input-dark text-xs" data-seat="${seatId}" data-field="dropoffStage">
+              <option value="">Dropoff</option>
+              ${getRoute().waypoints.map(w => `<option value="${w}" ${details.dropoffStage === w ? 'selected' : ''}>${w}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+      `;
+    });
+    formContainer.innerHTML = formHtml;
+
+    // Attach input events to update passenger details in state
+    formContainer.querySelectorAll('input, select').forEach(el => {
+      el.addEventListener('change', (e) => {
+        const seatId = parseInt(el.dataset.seat);
+        const field = el.dataset.field;
+        const seat = state.seats.find(s => s.id === seatId);
+        if (!seat) return;
+        if (!seat.passengerDetails) {
+          seat.passengerDetails = { name: '', phone: '', pickupStage: '', dropoffStage: '' };
+        }
+        seat.passengerDetails[field] = el.value;
+        saveState();
+      });
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  //  ADMIN RENDER
+  // ─────────────────────────────────────────────────────────────
+
+  function renderAdminPortal() {
+    // Route dropdown
+    const routeSelect = document.getElementById('adminRouteSelect');
+    routeSelect.innerHTML = DEFAULT_ROUTES.map(r =>
+      `<option value="${r.id}" ${r.id === state.selectedRouteId ? 'selected' : ''}>${r.name}</option>`
+    ).join('');
+
+    // Override fields
+    document.getElementById('adminFareOverride').value = state.manualFareOverride || '';
+    document.getElementById('adminExpenseInput').value = state.manualExpenses || '';
+
+    // Peak toggle button text
+    const peakBtn = document.getElementById('adminPeakToggle');
+    peakBtn.textContent = state.isPeak ? '🔥 Peak Surge' : '❄️ Standard';
+    peakBtn.className = `px-4 py-2 rounded-lg text-sm font-semibold ${state.isPeak ? 'bg-amber-600 text-white border-amber-500' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-slate-700'}`;
+
+    // Update stats
+    const stats = calculateAnalytics();
+    document.getElementById('adminOccupancy').textContent = `${stats.booked} / 43`;
+    document.getElementById('adminOccupancyPct').textContent = `${stats.occupancyPct.toFixed(1)}%`;
+    document.getElementById('adminRevenue').textContent = `KSh ${stats.revenue.toLocaleString()}`;
+    document.getElementById('adminExpenses').textContent = `KSh ${stats.expenses.toLocaleString()}`;
+    const profitEl = document.getElementById('adminProfit');
     profitEl.textContent = `KSh ${stats.profit.toLocaleString()}`;
     profitEl.className = `text-xl font-bold ${stats.profit >= 0 ? 'text-emerald-400' : 'text-rose-500'}`;
+    document.getElementById('adminBreakEven').textContent = stats.breakEven;
 
-    $('statBreakEven').textContent = `${stats.breakEven} Seats`;
+    // Render admin seat grid (with admin override clicks)
+    renderSeatGrid('adminSeatGrid', (seatId) => {
+      // Admin click: toggle booking or edit
+      const seat = state.seats.find(s => s.id === seatId);
+      if (!seat) return;
+      if (seat.isBooked) {
+        // If booked by admin, we can release; if by customer, we may want to allow but we'll just toggle
+        seat.isBooked = false;
+        seat.bookedBy = null;
+        seat.farePaid = 0;
+        seat.passengerDetails = null;
+      } else {
+        // Book with admin override fare
+        seat.isBooked = true;
+        seat.bookedBy = 'ADMIN';
+        const fare = getAdminFarePerSeat();
+        seat.farePaid = fare;
+        // Create default passenger details if not exist
+        if (!seat.passengerDetails) {
+          seat.passengerDetails = { name: 'Admin Booking', phone: '', pickupStage: '', dropoffStage: '' };
+        }
+      }
+      saveState();
+      renderAdminPortal();
+      // Also refresh customer view if visible? We'll sync when switching.
+    }, true);
 
-    // Peak badge
-    peakToggle.textContent = isPeak ? '🔥 Peak Surge On' : '❄️ Off‑Peak Mode';
-    peakToggle.className = `px-5 py-2 rounded-lg text-sm font-semibold transition border ${isPeak ? 'bg-amber-600 text-white border-amber-500' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-slate-700'}`;
+    // Manifest table
+    renderManifest();
+
+    // Admin buttons
+    document.getElementById('adminFillAll').onclick = () => {
+      const fare = getAdminFarePerSeat();
+      state.seats.forEach(s => {
+        if (!s.isBooked) {
+          s.isBooked = true;
+          s.bookedBy = 'ADMIN';
+          s.farePaid = fare;
+          if (!s.passengerDetails) {
+            s.passengerDetails = { name: 'Bulk Fill', phone: '', pickupStage: '', dropoffStage: '' };
+          }
+        }
+      });
+      saveState();
+      renderAdminPortal();
+    };
+
+    document.getElementById('adminClearAll').onclick = () => {
+      state.seats.forEach(s => {
+        s.isBooked = false;
+        s.bookedBy = null;
+        s.farePaid = 0;
+        s.passengerDetails = null;
+      });
+      state.customerSelectedSeats = [];
+      saveState();
+      renderAdminPortal();
+    };
+
+    document.getElementById('adminExportCSV').onclick = () => {
+      exportCSV();
+    };
   }
 
-  function renderAll() {
-    renderSeats();
-    renderStats();
+  function renderManifest() {
+    const tbody = document.getElementById('manifestBody');
+    let rows = '';
+    state.seats.forEach(s => {
+      if (!s.isBooked) return;
+      const detail = s.passengerDetails || { name: '—', phone: '—', pickupStage: '—', dropoffStage: '—' };
+      rows += `<tr>
+        <td class="font-mono">${s.id}</td>
+        <td>${detail.name || '—'}</td>
+        <td>${detail.phone || '—'}</td>
+        <td>${detail.pickupStage || '—'}</td>
+        <td>${detail.dropoffStage || '—'}</td>
+        <td>${s.farePaid || 0}</td>
+        <td>${s.bookedBy || '—'}</td>
+      </tr>`;
+    });
+    if (!rows) rows = `<tr><td colspan="7" class="text-center text-slate-400">No bookings</td></tr>`;
+    tbody.innerHTML = rows;
   }
 
-  // ──────────────────────────────────────────────
-  //  ACTIONS
-  // ──────────────────────────────────────────────
+  function exportCSV() {
+    const rows = [];
+    rows.push('Seat,Name,Phone,Pickup,Dropoff,Fare,BookedBy');
+    state.seats.forEach(s => {
+      if (!s.isBooked) return;
+      const d = s.passengerDetails || { name: '', phone: '', pickupStage: '', dropoffStage: '' };
+      rows.push(`${s.id},"${d.name || ''}","${d.phone || ''}","${d.pickupStage || ''}","${d.dropoffStage || ''}",${s.farePaid || 0},${s.bookedBy || ''}`);
+    });
+    const csv = rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `manifest_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
-  function toggleSeat(id) {
-    const seat = seats.find(s => s.id === id);
-    if (!seat) return;
+  // ─────────────────────────────────────────────────────────────
+  //  PORTAL SWITCHING
+  // ─────────────────────────────────────────────────────────────
 
-    const route = getRoute();
-    const effectiveFare = isPeak ? route.peakFare : route.baseFare;
-    const fareOverride = parseFloat(fareInput.value) || 0;
+  function showPortal(portal) {
+    const cust = document.getElementById('customerPortal');
+    const admin = document.getElementById('adminPortal');
+    const custBtn = document.getElementById('switchCustomer');
+    const adminBtn = document.getElementById('switchAdmin');
 
-    if (seat.booked) {
-      // Unbook
-      seat.booked = false;
-      seat.farePaid = 0;
+    if (portal === 'customer') {
+      cust.classList.remove('hidden');
+      admin.classList.add('hidden');
+      custBtn.className = 'tab-btn active';
+      adminBtn.className = 'tab-btn inactive';
+      renderCustomerPortal();
+      // Sync customer view with latest state (e.g., bookings from admin)
     } else {
-      // Book
-      seat.booked = true;
-      seat.farePaid = fareOverride > 0 ? fareOverride : effectiveFare;
+      cust.classList.add('hidden');
+      admin.classList.remove('hidden');
+      custBtn.className = 'tab-btn inactive';
+      adminBtn.className = 'tab-btn active';
+      renderAdminPortal();
     }
-    renderAll();
   }
 
-  function fillAll() {
-    const route = getRoute();
-    const effectiveFare = isPeak ? route.peakFare : route.baseFare;
-    const fareOverride = parseFloat(fareInput.value) || 0;
-    const fare = fareOverride > 0 ? fareOverride : effectiveFare;
+  // ─────────────────────────────────────────────────────────────
+  //  EVENT BINDINGS
+  // ─────────────────────────────────────────────────────────────
 
-    seats.forEach(s => {
-      s.booked = true;
-      s.farePaid = fare;
+  // Portal switches
+  document.getElementById('switchCustomer').addEventListener('click', () => showPortal('customer'));
+  document.getElementById('switchAdmin').addEventListener('click', () => showPortal('admin'));
+
+  // Customer: route change
+  document.getElementById('custRouteSelect').addEventListener('change', (e) => {
+    state.selectedRouteId = e.target.value;
+    // Clear customer selection
+    state.customerSelectedSeats = [];
+    saveState();
+    renderCustomerPortal();
+  });
+
+  // Customer: departure change
+  document.getElementById('custDeparture').addEventListener('change', (e) => {
+    state.departureTime = e.target.value;
+    saveState();
+  });
+
+  // Customer: Book button
+  document.getElementById('custBookBtn').addEventListener('click', () => {
+    const selected = state.customerSelectedSeats;
+    if (selected.length === 0) return;
+
+    // Validate passenger details for each selected seat
+    let valid = true;
+    selected.forEach(seatId => {
+      const seat = state.seats.find(s => s.id === seatId);
+      if (!seat) return;
+      const d = seat.passengerDetails || { name: '', phone: '', pickupStage: '', dropoffStage: '' };
+      if (!d.name || !d.phone || !d.pickupStage || !d.dropoffStage) {
+        valid = false;
+      }
     });
-    renderAll();
-  }
-
-  function clearAll() {
-    seats.forEach(s => {
-      s.booked = false;
-      s.farePaid = 0;
-    });
-    renderAll();
-  }
-
-  function loadRouteOptions() {
-    routeSelect.innerHTML = ROUTES.map(r =>
-      `<option value="${r.id}" ${r.id === selectedRouteId ? 'selected' : ''}>${r.name} (${r.dist} km)</option>`
-    ).join('');
-  }
-
-  function refreshFromControls() {
-    const route = getRoute();
-    customFare = parseFloat(fareInput.value) || route.baseFare;
-    manualExpense = parseFloat(expenseInput.value) || 0;
-    renderAll();
-  }
-
-  // ──────────────────────────────────────────────
-  //  EVENT BINDING
-  // ──────────────────────────────────────────────
-
-  // Route change
-  routeSelect.addEventListener('change', (e) => {
-    selectedRouteId = e.target.value;
-    const route = getRoute();
-    fareInput.value = route.baseFare;
-    customFare = route.baseFare;
-    // Reset custom fares on already-booked seats? We'll keep them.
-    renderAll();
-  });
-
-  // Fare override change
-  fareInput.addEventListener('input', () => {
-    customFare = parseFloat(fareInput.value) || 0;
-    // We do NOT auto-update existing seats; only new bookings use this.
-    // But we re-render stats (effective fare changed for new bookings only)
-    renderStats();
-  });
-
-  // Expense change
-  expenseInput.addEventListener('input', () => {
-    manualExpense = parseFloat(expenseInput.value) || 0;
-    renderStats();
-  });
-
-  // Peak toggle
-  peakToggle.addEventListener('click', () => {
-    isPeak = !isPeak;
-    // Update fare input placeholder to show peak/base
-    const route = getRoute();
-    const displayFare = isPeak ? route.peakFare : route.baseFare;
-    // If user hasn't manually overridden, update the input
-    const currentVal = parseFloat(fareInput.value);
-    if (!currentVal || currentVal === (isPeak ? route.peakFare : route.baseFare)) {
-      fareInput.value = displayFare;
-      customFare = displayFare;
+    if (!valid) {
+      alert('Please fill in all passenger details (Name, Phone, Pickup, Dropoff) for each selected seat.');
+      return;
     }
-    renderAll();
+
+    // Process booking
+    const route = getRoute();
+    const fare = getEffectiveFare();
+    const total = selected.length * fare;
+    const ref = 'TCP-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+
+    // Book seats
+    selected.forEach(seatId => {
+      const seat = state.seats.find(s => s.id === seatId);
+      if (!seat) return;
+      seat.isBooked = true;
+      seat.bookedBy = 'CUSTOMER';
+      seat.farePaid = fare;
+      // passengerDetails already set
+    });
+
+    // Store booking record
+    const booking = {
+      ref,
+      routeId: state.selectedRouteId,
+      departure: state.departureTime,
+      seats: selected.map(id => {
+        const s = state.seats.find(s => s.id === id);
+        return { seatId: id, passenger: s.passengerDetails };
+      }),
+      totalPaid: total,
+    };
+    state.bookings.push(booking);
+    state.lastTicket = booking;
+
+    // Clear selection
+    state.customerSelectedSeats = [];
+    saveState();
+
+    // Show ticket
+    showTicket(booking);
+    // Re-render customer portal
+    renderCustomerPortal();
   });
 
-  // Bulk buttons
-  $('fillAllBtn').addEventListener('click', fillAll);
-  $('clearAllBtn').addEventListener('click', clearAll);
+  function showTicket(booking) {
+    const ticketDiv = document.getElementById('ticketDisplay');
+    ticketDiv.classList.remove('hidden');
+    document.getElementById('ticketRef').textContent = booking.ref;
+    const route = DEFAULT_ROUTES.find(r => r.id === booking.routeId);
+    document.getElementById('ticketRoute').textContent = route ? route.name : '—';
+    document.getElementById('ticketDeparture').textContent = new Date(booking.departure).toLocaleString();
+    const seatLabels = booking.seats.map(s => s.seatId).join(', ');
+    document.getElementById('ticketSeats').textContent = seatLabels;
+    const names = booking.seats.map(s => s.passenger?.name || '—').join(', ');
+    document.getElementById('ticketPassengers').textContent = names;
+    // QR placeholder - we could generate a QR code but we'll keep it simple.
+    document.getElementById('qrPlaceholder').innerHTML = `QR<br/><span class="text-[10px]">${booking.ref}</span>`;
+  }
 
-  // ──────────────────────────────────────────────
+  document.getElementById('ticketCloseBtn').addEventListener('click', () => {
+    document.getElementById('ticketDisplay').classList.add('hidden');
+  });
+
+  // Admin: route change
+  document.getElementById('adminRouteSelect').addEventListener('change', (e) => {
+    state.selectedRouteId = e.target.value;
+    // Reset override? Not necessarily.
+    saveState();
+    renderAdminPortal();
+  });
+
+  // Admin: fare override
+  document.getElementById('adminFareOverride').addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    state.manualFareOverride = (val > 0) ? val : 0;
+    saveState();
+    renderAdminPortal();
+  });
+
+  // Admin: expense input
+  document.getElementById('adminExpenseInput').addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value);
+    state.manualExpenses = (val > 0) ? val : 0;
+    saveState();
+    renderAdminPortal();
+  });
+
+  // Admin: peak toggle
+  document.getElementById('adminPeakToggle').addEventListener('click', () => {
+    state.isPeak = !state.isPeak;
+    saveState();
+    renderAdminPortal();
+    // Also update customer peak badge
+    updatePeakBadge();
+  });
+
+  function updatePeakBadge() {
+    const badge = document.getElementById('peakBadge');
+    badge.textContent = state.isPeak ? '🔥 Peak Surge' : '❄️ Standard';
+    badge.className = state.isPeak ? 'badge-peak' : 'badge-offpeak';
+  }
+
+  // ─────────────────────────────────────────────────────────────
   //  INIT
-  // ──────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
 
   function init() {
-    loadRouteOptions();
-    // Set initial fare input
-    const route = ROUTES[0];
-    fareInput.value = route.baseFare;
-    customFare = route.baseFare;
-    expenseInput.value = 0;
-    manualExpense = 0;
-    selectedRouteId = route.id;
-    renderAll();
+    updatePeakBadge();
+    // Default show customer portal
+    showPortal('customer');
+    // Also render admin once
+    renderAdminPortal();
   }
 
   init();
