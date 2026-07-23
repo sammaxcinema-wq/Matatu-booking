@@ -1,198 +1,407 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>TransitCore Pro | Enterprise Matatu SaaS</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TransitCore Pro · 43‑Seat Dispatcher</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body {
-      background: radial-gradient(circle at 10% 20%, rgb(20, 24, 35), rgb(9, 11, 18));
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
-      color: #fff;
+      background: radial-gradient(circle at 10% 20%, #0f172a, #020617);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       min-height: 100vh;
-      margin: 0;
-      padding: 0;
+      padding: 1.5rem;
+      color: #e2e8f0;
     }
-    .glass-card {
-      background: rgba(24, 27, 38, 0.75);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 1.5rem;
-      transition: all 0.2s ease;
+    .glass {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(51, 65, 85, 0.6);
+      border-radius: 1.25rem;
     }
-    .glass-card-light { background: rgba(30, 34, 48, 0.65); backdrop-filter: blur(8px); }
-    .auth-container { position: fixed; inset: 0; background: rgba(9, 11, 18, 0.98); display: flex; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(8px); }
-    .seat-available { background: #27272a; border: 1px solid #3f3f46; transition: all 0.1s ease; color: #e4e4e7; }
-    .seat-available:hover { background: #3f3f46; transform: scale(1.02); }
-    .seat-selected { background: #10b981; border-color: #34d399; box-shadow: 0 0 8px rgba(16,185,129,0.5); color: white; }
-    .seat-locked { background: #b45309; border-color: #f59e0b; cursor: not-allowed; opacity: 0.7; color: #fed7aa; }
-    .seat-sold { background: #991b1b; border-color: #7f1d1d; text-decoration: line-through; cursor: not-allowed; color: #fca5a5; }
-    .btn-primary { background: #10b981; transition: all 0.2s; }
-    .btn-primary:hover:not(:disabled) { background: #059669; transform: translateY(-1px); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .btn-secondary { background: rgba(59, 130, 246, 0.8); transition: all 0.2s; }
-    .btn-secondary:hover:not(:disabled) { background: rgb(59, 130, 246); }
-    .btn-danger { background: rgba(239, 68, 68, 0.8); transition: all 0.2s; }
-    .btn-danger:hover:not(:disabled) { background: rgb(239, 68, 68); }
-    .nav-tab { position: relative; padding-bottom: 0.5rem; border-bottom: 2px solid transparent; color: #a1a1a1; transition: all 0.2s; cursor: pointer; }
-    .nav-tab.active { color: #10b981; border-bottom-color: #10b981; }
-    .input-field { background: rgba(24, 27, 38, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0.75rem; padding: 0.75rem; color: white; transition: all 0.2s; }
-    .input-field:focus { outline: none; border-color: #10b981; background: rgba(24, 27, 38, 0.8); box-shadow: 0 0 12px rgba(16, 185, 129, 0.2); }
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
-    .table-row { border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding: 1rem 0; transition: all 0.2s; }
-    .badge-status { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-    .badge-active { background: rgba(16, 185, 129, 0.2); color: #10b981; }
-    .badge-inactive { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
-    .error-message { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 0.75rem; border-radius: 0.75rem; font-size: 0.875rem; }
-    .success-message { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #86efac; padding: 0.75rem; border-radius: 0.75rem; font-size: 0.875rem; }
-    .spinner { display: inline-block; width: 1rem; height: 1rem; border: 2px solid rgba(16, 185, 129, 0.3); border-top: 2px solid #10b981; border-radius: 50%; animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .hidden { display: none !important; }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: rgba(31, 31, 46, 0.5); }
-    ::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
-    .animate-fadeIn { animation: fadeIn 0.2s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .seat-btn {
+      transition: all 0.15s ease;
+      font-weight: 700;
+      font-size: 0.7rem;
+      line-height: 1;
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.5rem;
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: #1e293b;
+      color: #94a3b8;
+      border-color: #334155;
+    }
+    .seat-btn:hover:not(.booked) { background: #2d3a4f; border-color: #64748b; }
+    .seat-btn.booked { background: #059669; border-color: #34d399; color: #fff; box-shadow: 0 0 12px rgba(5, 150, 105, 0.3); }
+    .seat-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .stat-card { background: rgba(30, 41, 59, 0.6); border-radius: 0.75rem; padding: 0.75rem 1rem; border: 1px solid rgba(51, 65, 85, 0.4); }
+    .input-dark { background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.5rem 0.75rem; color: #f1f5f9; width: 100%; }
+    .input-dark:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3); }
+    .input-dark::placeholder { color: #475569; }
+    .badge-peak { background: #d97706; color: #fffbeb; padding: 0.2rem 0.7rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+    .badge-offpeak { background: #334155; color: #cbd5e1; padding: 0.2rem 0.7rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
   </style>
 </head>
 <body>
 
-<!-- AUTH OVERLAY -->
-<div id="authOverlay" class="auth-container">
-  <div class="glass-card p-8 w-[90%] max-w-md">
-    <div class="flex items-center justify-center mb-6">
-      <div class="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center shadow-lg mr-3"><span class="text-2xl font-black">T</span></div>
-      <h1 class="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-emerald-200 bg-clip-text text-transparent">TransitCore</h1>
+<div id="app" class="max-w-6xl mx-auto space-y-6">
+
+  <!-- HEADER -->
+  <header class="glass p-5 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+        <span class="bg-indigo-600 w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm">🚌</span>
+        TransitCore Pro Dispatcher
+      </h1>
+      <p class="text-sm text-slate-400">43‑Seater Fleet · Manual Fare Override Console</p>
     </div>
-    <p class="text-center text-zinc-400 mb-6 text-sm">Enterprise Fleet Management • Offline Credentials</p>
-    <div id="authError" class="error-message hidden mb-4"></div>
-    <div class="space-y-4 mb-6">
-      <div><label class="text-xs uppercase tracking-widest text-zinc-400 mb-2 block">Organization</label>
-        <select id="authTenant" class="w-full input-field">
-          <option value="">— Select Organization —</option>
-          <option value="sacco_simba">🚐 Simba Sacco (Premium)</option>
-          <option value="sacco_nganya">💨 Nganya Express (Metro)</option>
-        </select>
-      </div>
-      <div><label class="text-xs uppercase tracking-widest text-zinc-400 mb-2 block">Email</label>
-        <input type="email" id="authEmail" class="w-full input-field" placeholder="admin@transit.local" value="admin@transit.local">
-      </div>
-      <div><label class="text-xs uppercase tracking-widest text-zinc-400 mb-2 block">Password</label>
-        <input type="password" id="authPassword" class="w-full input-field" placeholder="••••••••" value="admin123">
-      </div>
-      <div><label class="text-xs uppercase tracking-widest text-zinc-400 mb-2 block">Role</label>
-        <div class="grid grid-cols-2 gap-2">
-          <button type="button" id="roleCommuter" class="role-btn py-2 px-3 rounded-lg border border-zinc-700 text-sm text-zinc-400 hover:border-emerald-500/50">👤 Commuter</button>
-          <button type="button" id="roleAdmin" class="role-btn py-2 px-3 rounded-lg border border-emerald-500 bg-emerald-500/20 text-emerald-400 font-semibold">⚙️ Admin</button>
-        </div>
-        <input type="hidden" id="selectedRole" value="admin">
-      </div>
-    </div>
-    <button id="authSubmit" class="w-full btn-primary py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
-      <span id="authSubmitText">Secure Access</span>
-      <span id="authSpinner" class="spinner hidden"></span>
+    <button id="peakToggle" class="px-5 py-2 rounded-lg text-sm font-semibold transition bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700">
+      ❄️ Off‑Peak Mode
     </button>
-    <p class="text-center text-[10px] text-zinc-500 mt-4">✓ Multi-tenant vault • HMAC-256 tickets</p>
+  </header>
+
+  <!-- CONTROLS: Route, Fare Override, Expenses -->
+  <div class="glass p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div>
+      <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Select Route</label>
+      <select id="routeSelect" class="input-dark"></select>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Manual Base Fare (KSh)</label>
+      <input type="number" id="fareOverride" class="input-dark text-emerald-400 font-mono" value="250" min="0" />
+    </div>
+    <div>
+      <label class="block text-xs font-semibold uppercase text-slate-400 mb-1">Misc Expenses (KSh)</label>
+      <input type="number" id="expenseInput" class="input-dark text-rose-400 font-mono" value="0" min="0" placeholder="Tolls, fees…" />
+    </div>
   </div>
+
+  <!-- STATS ROW -->
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-3" id="statsRow">
+    <div class="stat-card"><p class="text-xs text-slate-400">Booked Seats</p><p class="text-xl font-bold text-indigo-400" id="statBooked">0 / 43</p><span class="text-xs text-slate-500" id="statOccupancy">0% Full</span></div>
+    <div class="stat-card"><p class="text-xs text-slate-400">Gross Fare</p><p class="text-xl font-bold text-emerald-400" id="statRevenue">KSh 0</p></div>
+    <div class="stat-card"><p class="text-xs text-slate-400">Total Expenses</p><p class="text-xl font-bold text-rose-400" id="statExpenses">KSh 0</p></div>
+    <div class="stat-card"><p class="text-xs text-slate-400">Net Profit</p><p class="text-xl font-bold" id="statProfit">KSh 0</p></div>
+    <div class="stat-card"><p class="text-xs text-slate-400">Break‑even</p><p class="text-xl font-bold text-amber-400" id="statBreakEven">0 Seats</p></div>
+  </div>
+
+  <!-- SEATING GRID -->
+  <div class="glass p-5 space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h2 class="text-base font-semibold text-slate-200">Bus Seating Grid · 43 Capacity</h2>
+      <div class="flex gap-2">
+        <button id="fillAllBtn" class="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs rounded text-slate-200 border border-slate-700 transition">Fill All Seats</button>
+        <button id="clearAllBtn" class="px-4 py-1.5 bg-rose-950 hover:bg-rose-900 text-xs rounded text-rose-300 border border-rose-800/50 transition">Clear All</button>
+      </div>
+    </div>
+
+    <!-- FLOOR PLAN -->
+    <div class="max-w-md mx-auto bg-slate-950 p-4 rounded-xl border-2 border-slate-800 space-y-3">
+      <!-- Driver cabin + door indicator -->
+      <div class="flex justify-between items-center pb-2 border-b border-slate-800 text-[10px] text-slate-500 uppercase">
+        <span class="bg-slate-800 px-2 py-0.5 rounded">Driver Cabin</span>
+        <span class="bg-slate-800 px-2 py-0.5 rounded">Passenger Door</span>
+      </div>
+
+      <!-- Seat grid container -->
+      <div id="seatGrid" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER HINT -->
+  <p class="text-center text-[11px] text-slate-600 mt-2">Click a seat to toggle booking · Override fare per seat via the input above</p>
 </div>
-
-<!-- MAIN APP -->
-<div id="mainApp" class="hidden flex flex-col h-screen">
-  <div class="border-b border-zinc-800/50 glass-card-light sticky top-0 z-40 flex-shrink-0">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center flex-wrap gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center"><span class="text-xl font-black">T</span></div>
-        <div><h1 class="text-xl font-bold">TransitCore Pro</h1><p class="text-xs text-zinc-400" id="tenantDisplay">—</p></div>
-      </div>
-      <div class="flex items-center gap-4">
-        <div class="glass-card px-4 py-2 rounded-lg text-sm flex items-center gap-2"><span id="userInfo" class="text-xs sm:text-sm">—</span><span id="roleDisplay" class="badge-status badge-active text-xs">—</span></div>
-        <button id="logoutBtn" class="px-3 sm:px-4 py-2 rounded-lg text-sm border border-zinc-700 hover:border-red-500 hover:text-red-400 transition-all">Logout</button>
-      </div>
-    </div>
-    <div class="max-w-7xl mx-auto px-4 py-3 flex gap-6 sm:gap-8 border-t border-zinc-800/50 overflow-x-auto">
-      <button class="nav-tab active" data-view="commuter">🎫 Booking</button>
-      <button class="nav-tab" data-view="admin" id="adminNavTab">⚙️ Admin Console</button>
-    </div>
-  </div>
-
-  <div id="contentArea" class="flex-1 overflow-y-auto">
-    <div class="max-w-7xl mx-auto px-4 py-6">
-      <!-- COMMUTER VIEW -->
-      <div id="commuterView" class="space-y-6">
-        <div class="flex justify-end"><div class="glass-card px-4 py-2 rounded-xl text-sm flex items-center gap-2"><i data-lucide="building2" class="w-4 h-4"></i><select id="tenantSelector" class="bg-transparent border-none outline-none text-emerald-300 font-medium cursor-pointer"><option value="sacco_simba">🚐 Simba Sacco</option><option value="sacco_nganya">💨 Nganya Express</option></select></div></div>
-        <div class="grid md:grid-cols-12 gap-6">
-          <div class="md:col-span-7 space-y-5">
-            <div class="glass-card p-5"><div class="flex items-center gap-3 mb-4"><i data-lucide="map-pin" class="w-5 h-5 text-emerald-400"></i><h2 class="text-xl font-semibold">Select corridor & departure</h2></div>
-              <div id="tripSelectionError" class="error-message hidden mb-4"></div>
-              <div class="grid sm:grid-cols-2 gap-4"><div><label class="text-xs uppercase text-zinc-400">Route</label><select id="routeSelect" class="w-full mt-1 input-field"></select></div><div><label class="text-xs uppercase text-zinc-400">Departure</label><select id="tripSelect" class="w-full mt-1 input-field"></select></div></div>
-            </div>
-            <div class="glass-card p-5"><div class="flex justify-between items-center flex-wrap mb-3"><div class="flex gap-3 text-xs"><span class="flex items-center gap-1"><span class="w-3 h-3 bg-zinc-700 rounded"></span> Open</span><span class="flex items-center gap-1"><span class="w-3 h-3 bg-emerald-500 rounded"></span> Selected</span><span class="flex items-center gap-1"><span class="w-3 h-3 bg-amber-700 rounded"></span> Locked</span><span class="flex items-center gap-1"><span class="w-3 h-3 bg-red-800 rounded"></span> Sold</span></div><span class="text-xs bg-zinc-800 px-3 py-1 rounded-full">⏱️ 180s lock</span></div>
-              <div id="dynamicSeatGrid" class="grid justify-center gap-2 py-4 min-h-[180px]"><div class="text-center text-zinc-500 col-span-full py-8">Select a trip to load seating matrix</div></div>
-              <div class="mt-4 flex justify-between items-center border-t border-zinc-800 pt-3"><div><span class="text-zinc-400 text-sm">Selected:</span><span id="selectedSeatsList" class="font-mono text-emerald-300 ml-2">—</span></div><div class="text-right"><div class="text-xl font-bold" id="totalAmount">KSh 0</div></div></div>
-              <button id="proceedPaymentBtn" class="w-full mt-4 btn-primary py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-50" disabled><i data-lucide="smartphone" class="w-4 h-4"></i> Book & Pay with M-Pesa</button>
-            </div>
-            <div id="ticketSection" class="glass-card p-5 hidden"><div class="flex items-center gap-2 mb-3 border-b border-emerald-500/30 pb-2"><i data-lucide="ticket" class="w-5 h-5 text-emerald-400"></i><h3 class="font-bold">🎟️ Boarding Pass (Offline)</h3></div>
-              <div class="flex flex-col sm:flex-row gap-5 items-center sm:items-start"><div id="qrCodeContainer" class="bg-white p-2 rounded-xl w-32 h-32 flex items-center justify-center text-black text-xs text-center flex-shrink-0"></div><div class="flex-1 text-sm space-y-1.5"><p><span class="text-zinc-400">Booking ID:</span> <span id="bookingIdDisplay" class="font-mono text-xs">—</span></p><p><span class="text-zinc-400">Trip:</span> <span id="tripDisplay" class="text-xs">—</span></p><p><span class="text-zinc-400">Seats:</span> <span id="ticketSeats" class="text-emerald-300 text-xs">—</span></p><p><span class="text-zinc-400">Expires:</span> <span id="ticketExpiry" class="text-xs">—</span></p><p class="text-xs text-emerald-400/80 mt-2">✓ HMAC-SHA256 • conductor-ready</p></div></div>
-            </div>
-          </div>
-          <div class="md:col-span-5 space-y-5">
-            <div class="glass-card p-5"><div class="flex gap-2 items-center mb-3"><i data-lucide="bus-front" class="w-4 h-4 text-emerald-400"></i><span class="font-semibold text-sm">Live Fleet Feed</span></div><div id="liveFeed" class="space-y-2 max-h-48 overflow-y-auto text-xs"><div class="text-zinc-500 text-center py-6">Awaiting trip selection</div></div></div>
-            <div class="glass-card p-5"><div class="flex gap-2 items-center mb-3"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i><span class="font-bold text-sm">Offline Ticket Verifier</span></div><textarea id="verifyQrInput" rows="2" class="w-full input-field text-xs font-mono mb-2" placeholder="Paste QR payload..."></textarea><button id="verifyTicketBtn" class="w-full btn-secondary py-2 rounded-lg text-sm flex items-center justify-center gap-1"><i data-lucide="scan" class="w-3 h-3"></i> Cryptographic Verify</button><div id="verifyResult" class="mt-3 text-xs rounded-lg p-2 bg-black/30 hidden"></div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ADMIN VIEW -->
-      <div id="adminView" class="hidden space-y-6">
-        <div class="flex gap-4 border-b border-zinc-800/50 pb-3 overflow-x-auto"><button class="admin-tab active" data-tab="overview">📊 Overview</button><button class="admin-tab" data-tab="buses">🚌 Fleet</button><button class="admin-tab" data-tab="routes">🗺️ Routes</button><button class="admin-tab" data-tab="trips">🚀 Schedules</button></div>
-        <div id="overviewTab" class="admin-content"><div class="grid md:grid-cols-4 gap-4"><div class="glass-card p-5 text-center"><div class="text-3xl font-bold text-emerald-400" id="statBuses">0</div><p class="text-xs text-zinc-400">Active Buses</p></div><div class="glass-card p-5 text-center"><div class="text-3xl font-bold text-blue-400" id="statRoutes">0</div><p class="text-xs text-zinc-400">Routes</p></div><div class="glass-card p-5 text-center"><div class="text-3xl font-bold text-purple-400" id="statTrips">0</div><p class="text-xs text-zinc-400">Trips</p></div><div class="glass-card p-5 text-center"><div class="text-3xl font-bold text-yellow-400" id="statRevenue">KSh 0</div><p class="text-xs text-zinc-400">Est. Revenue</p></div></div></div>
-        <div id="busesTab" class="admin-content hidden"><div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold flex items-center gap-2"><i data-lucide="bus" class="w-5 h-5 text-emerald-400"></i> Fleet Inventory</h3><button id="addBusBtn" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Add Bus</button></div><div class="glass-card p-5"><div id="busesTable" class="space-y-3"></div></div></div>
-        <div id="routesTab" class="admin-content hidden"><div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold flex items-center gap-2"><i data-lucide="map" class="w-5 h-5 text-blue-400"></i> Corridors</h3><button id="addRouteBtn" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Add Route</button></div><div class="glass-card p-5"><div id="routesTable" class="space-y-3"></div></div></div>
-        <div id="tripsTab" class="admin-content hidden"><div class="flex justify-between items-center mb-5"><h3 class="text-xl font-bold flex items-center gap-2"><i data-lucide="zap" class="w-5 h-5 text-purple-400"></i> Timetable</h3><button id="addTripBtn" class="btn-primary px-4 py-2 rounded-lg text-sm flex items-center gap-2"><i data-lucide="plus" class="w-4 h-4"></i> Schedule Trip</button></div><div class="glass-card p-5"><div id="tripsTable" class="space-y-3"></div></div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- MODALS -->
-<div id="busModal" class="modal-overlay hidden"><div class="glass-card p-6 w-[90%] max-w-md"><h3 class="text-lg font-bold mb-4">Bus Asset</h3><div id="busFormError" class="error-message hidden mb-4"></div><div class="space-y-4"><input type="text" id="busPlate" class="w-full input-field" placeholder="License Plate"><input type="number" id="busCapacity" class="w-full input-field" placeholder="Capacity"><input type="text" id="busDriver" class="w-full input-field" placeholder="Driver Name"><select id="busStatus" class="w-full input-field"><option value="active">Active</option><option value="maintenance">Maintenance</option><option value="inactive">Inactive</option></select></div><div class="flex gap-3 mt-6"><button class="flex-1 py-2 bg-zinc-700 rounded-lg closeModal">Cancel</button><button id="saveBusBtn" class="flex-1 btn-primary py-2 rounded-lg">Save</button></div></div></div>
-<div id="routeModal" class="modal-overlay hidden"><div class="glass-card p-6 w-[90%] max-w-md"><h3 class="text-lg font-bold mb-4">Route Corridor</h3><div id="routeFormError" class="error-message hidden mb-4"></div><div class="space-y-4"><input type="text" id="routeSource" class="w-full input-field" placeholder="From"><input type="text" id="routeDestination" class="w-full input-field" placeholder="To"><input type="number" id="routeFare" class="w-full input-field" placeholder="Base Fare (KSh)"><input type="number" id="routeDistance" class="w-full input-field" placeholder="Distance (km)"></div><div class="flex gap-3 mt-6"><button class="flex-1 py-2 bg-zinc-700 rounded-lg closeModal">Cancel</button><button id="saveRouteBtn" class="flex-1 btn-primary py-2 rounded-lg">Save</button></div></div></div>
-<div id="tripModal" class="modal-overlay hidden"><div class="glass-card p-6 w-[90%] max-w-md"><h3 class="text-lg font-bold mb-4">Trip Manifest</h3><div id="tripFormError" class="error-message hidden mb-4"></div><div class="space-y-4"><select id="tripRoute" class="w-full input-field"><option>Select route</option></select><select id="tripBus" class="w-full input-field"><option>Select bus</option></select><input type="datetime-local" id="tripDeparture" class="w-full input-field"><input type="number" id="tripFare" class="w-full input-field" placeholder="Fare override (optional)"></div><div class="flex gap-3 mt-6"><button class="flex-1 py-2 bg-zinc-700 rounded-lg closeModal">Cancel</button><button id="saveTripBtn" class="flex-1 btn-primary py-2 rounded-lg">Schedule</button></div></div></div>
-<div id="deleteModal" class="modal-overlay hidden"><div class="glass-card p-6 w-[90%] max-w-sm text-center"><i data-lucide="alert-triangle" class="w-12 h-12 text-red-400 mx-auto mb-3"></i><h3 class="text-lg font-bold mb-2">Confirm Deletion</h3><p class="text-zinc-400 mb-6 text-sm" id="deleteMsg">Permanent removal?</p><div class="flex gap-3"><button id="cancelDeleteBtn" class="flex-1 py-2 bg-zinc-700 rounded-lg">Cancel</button><button id="confirmDeleteBtn" class="flex-1 btn-danger py-2 rounded-lg">Delete</button></div></div></div>
-<div id="mpesaModal" class="modal-overlay hidden"><div class="glass-card p-6 w-[90%] max-w-sm text-center"><i data-lucide="smartphone" class="w-12 h-12 text-emerald-400 mx-auto mb-2"></i><h3 class="text-xl font-bold">M-Pesa Express</h3><p class="text-sm text-zinc-300 mt-1">Enter phone number</p><input type="tel" id="mpesaPhone" placeholder="0712345678" class="w-full mt-3 input-field text-center"><div class="flex gap-2 mt-5"><button class="flex-1 py-2 bg-zinc-700 rounded-lg closeModal">Cancel</button><button id="confirmMpesaPay" class="flex-1 btn-primary py-2 rounded-lg font-semibold flex items-center justify-center gap-2"><span>Pay KSh <span id="modalAmount">0</span></span><span id="mpesaSpinner" class="spinner hidden"></span></button></div><p class="text-[10px] text-zinc-500 mt-3">Demo • 85% approval simulation</p></div></div>
 
 <script>
-  // =============== ENTERPRISE MULTI-TENANT CORE ===============
-  const APP = { state: { user: null, tenant: null, role: null, trip: null, sessionId: Math.random().toString(36)+Date.now(), tenantSecret: null }, locks: { seats: new Map(), owners: new Map(), timers: new Map(), selected: new Set(), cleanup(){ this.timers.forEach(clearTimeout); this.timers.clear(); this.seats.clear(); this.owners.clear(); this.selected.clear(); } }, modals: { closeAll(){ document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.add('hidden')); } } };
-  const DataStore = { safe: { get(k){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):[]; }catch(e){ return []; } }, set(k,d){ try{ localStorage.setItem(k,JSON.stringify(d)); return true; }catch(e){ return false; } } }, getBuses:()=>DataStore.safe.get(`${APP.state.tenant}:buses`).filter(b=>b?.id&&b.plate&&b.capacity>0), setBuses:d=>DataStore.safe.set(`${APP.state.tenant}:buses`,d), getRoutes:()=>DataStore.safe.get(`${APP.state.tenant}:routes`).filter(r=>r?.id&&r.source), setRoutes:d=>DataStore.safe.set(`${APP.state.tenant}:routes`,d), getTrips:()=>DataStore.safe.get(`${APP.state.tenant}:trips`).filter(t=>t?.id), setTrips:d=>DataStore.safe.set(`${APP.state.tenant}:trips`,d), seedIfEmpty:(tenant)=>{ if(DataStore.safe.get(`${tenant}:buses`).length===0){ const buses=tenant==='sacco_simba'?[{id:"b1",plate:"KCD 777X",capacity:14,driver:"Omari",status:"active"},{id:"b2",plate:"KCA 888Y",capacity:14,driver:"Mwangi",status:"active"}]:[{id:"bn1",plate:"KCH 420K",capacity:14,driver:"Chalo",status:"active"}]; DataStore.safe.set(`${tenant}:buses`,buses); } if(DataStore.safe.get(`${tenant}:routes`).length===0){ const routes=tenant==='sacco_simba'?[{id:"r1",source:"Nairobi CBD",destination:"Thika",baseFare:150,distance:45},{id:"r2",source:"Nairobi CBD",destination:"Machakos",baseFare:250,distance:62}]:[{id:"rn1",source:"Ngara",destination:"Rongai",baseFare:120,distance:28}]; DataStore.safe.set(`${tenant}:routes`,routes); } if(DataStore.safe.get(`${tenant}:trips`).length===0){ const rts=DataStore.safe.get(`${tenant}:routes`),bus=DataStore.safe.get(`${tenant}:buses`)[0]; if(rts[0]&&bus){ const dep=new Date(); dep.setHours(dep.getHours()+2); DataStore.safe.set(`${tenant}:trips`,[{id:"t1",routeId:rts[0].id,busId:bus.id,departureTime:dep.toISOString(),routeName:`${rts[0].source}→${rts[0].destination}`,vehiclePlate:bus.plate,activeFare:rts[0].baseFare,capacity:bus.capacity}]); } } } };
-  const Utils = { toast:(msg,type='info')=>{ const d=document.createElement('div'); d.className=`fixed bottom-6 right-6 px-5 py-3 rounded-xl border text-sm font-semibold backdrop-blur-md z-[9999] ${type==='error'?'bg-red-950/80 border-red-500/50 text-red-200':'bg-emerald-950/80 border-emerald-500/50 text-emerald-200'}`; d.innerText=msg; document.body.appendChild(d); setTimeout(()=>d.remove(),4000); }, showError:(id,msg)=>{ const e=document.getElementById(id); if(e){ e.innerText=msg; e.classList.remove('hidden');} }, clearError:id=>{ const e=document.getElementById(id); if(e)e.classList.add('hidden'); }, formatTime:iso=>{ try{ return new Date(iso).toLocaleString('en-KE'); }catch{ return '—';} }, base64Encode:(str)=>btoa(Array.from(new TextEncoder().encode(str)).map(b=>String.fromCharCode(b)).join('')), base64Decode:(b64)=>new TextDecoder().decode(Uint8Array.from(atob(b64),c=>c.charCodeAt(0))) };
-  // AUTH
-  function handleAuth(){ const tenant=document.getElementById('authTenant').value,email=document.getElementById('authEmail').value.trim(),role=document.getElementById('selectedRole').value; Utils.clearError('authError'); if(!tenant||!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) return Utils.showError('authError','Valid tenant + email required'); document.getElementById('authSubmit').disabled=true; document.getElementById('authSpinner').classList.remove('hidden'); setTimeout(()=>{ try{ APP.state={user:{email,role,tenant},tenant,role,sessionId:Math.random().toString(36)+Date.now(),tenantSecret:tenant==='sacco_simba'?'simba_secret':'nganya_secret',trip:null,locks:{seats:new Map(),owners:new Map(),timers:new Map(),selected:new Set(),cleanup:function(){ this.timers.forEach(clearTimeout); this.timers.clear(); this.seats.clear(); this.owners.clear(); this.selected.clear(); }}}; DataStore.seedIfEmpty(tenant); document.getElementById('authOverlay').classList.add('hidden'); document.getElementById('mainApp').classList.remove('hidden'); document.getElementById('userInfo').innerText=`📧 ${email.split('@')[0]}`; document.getElementById('roleDisplay').innerText=role==='admin'?'⚙️ Admin':'👤 Commuter'; document.getElementById('tenantDisplay').innerText=tenant==='sacco_simba'?'Simba Sacco':'Nganya Express'; document.getElementById('tenantSelector').value=tenant; if(role==='commuter') document.getElementById('adminNavTab').classList.add('hidden'); else document.getElementById('adminNavTab').classList.remove('hidden'); initApp(); }catch(e){ Utils.showError('authError','Auth failure'); }finally{ document.getElementById('authSubmit').disabled=false; document.getElementById('authSpinner').classList.add('hidden'); } },500); }
-  document.getElementById('authSubmit').addEventListener('click',handleAuth); document.getElementById('roleCommuter').addEventListener('click',function(){ document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('border-emerald-500','bg-emerald-500/20','text-emerald-400','font-semibold')); this.classList.add('border-emerald-500','bg-emerald-500/20','text-emerald-400','font-semibold'); document.getElementById('selectedRole').value='commuter'; }); document.getElementById('roleAdmin').addEventListener('click',function(){ document.querySelectorAll('.role-btn').forEach(b=>b.classList.remove('border-emerald-500','bg-emerald-500/20','text-emerald-400','font-semibold')); this.classList.add('border-emerald-500','bg-emerald-500/20','text-emerald-400','font-semibold'); document.getElementById('selectedRole').value='admin'; }); document.getElementById('logoutBtn').addEventListener('click',()=>{ APP.state.locks?.cleanup(); document.getElementById('authOverlay').classList.remove('hidden'); document.getElementById('mainApp').classList.add('hidden'); });
-  // Seat engine
-  function releaseLock(seat,tripId){ if(!APP.state.trip||APP.state.trip.id!==tripId) return; if(APP.state.locks.seats.get(seat)!=='locked') return; APP.state.locks.seats.set(seat,'available'); APP.state.locks.owners.delete(seat); if(APP.state.locks.timers.has(seat)) clearTimeout(APP.state.locks.timers.get(seat)); APP.state.locks.timers.delete(seat); addLiveFeedEvent(`SEAT ${seat} released`); renderSeatMap(); if(APP.state.locks.selected.has(seat)){ APP.state.locks.selected.delete(seat); updateSelectedSummary(); } }
-  function lockSeat(seat,tripId,ttl=180){ if(!APP.state.trip||APP.state.trip.id!==tripId||APP.state.locks.seats.get(seat)!=='available') return false; APP.state.locks.seats.set(seat,'locked'); APP.state.locks.owners.set(seat,APP.state.sessionId); if(APP.state.locks.timers.has(seat)) clearTimeout(APP.state.locks.timers.get(seat)); const tid=setTimeout(()=>releaseLock(seat,tripId),ttl*1000); APP.state.locks.timers.set(seat,tid); addLiveFeedEvent(`SEAT ${seat} locked (180s)`); renderSeatMap(); return true; }
-  function markSeatsSold(seats,tripId){ seats.forEach(s=>{ if(APP.state.locks.timers.has(s)) clearTimeout(APP.state.locks.timers.get(s)); APP.state.locks.owners.delete(s); APP.state.locks.seats.set(s,'sold'); }); addLiveFeedEvent(`SOLD: ${seats.join(',')}`); renderSeatMap(); }
-  function initSeats(capacity){ APP.state.locks.seats.clear(); APP.state.locks.owners.clear(); APP.state.locks.timers.forEach(clearTimeout); APP.state.locks.timers.clear(); APP.state.locks.selected.clear(); for(let i=1;i<=capacity;i++) APP.state.locks.seats.set(i,'available'); updateSelectedSummary(); renderSeatMap(); }
-  function renderSeatMap(){ const grid=document.getElementById('dynamicSeatGrid'); if(!APP.state.trip){ grid.innerHTML='<div class="text-center text-zinc-500 py-8">Select a trip</div>'; return; } const cap=APP.state.trip.capacity||14; let html='<div class="grid grid-cols-3 gap-2 max-w-xs mx-auto">'; for(let i=1;i<=cap;i++){ const state=APP.state.locks.seats.get(i); let cls='seat-available',disabled=false; if(state==='sold'){ cls='seat-sold'; disabled=true; }else if(state==='locked'){ if(APP.state.locks.owners.get(i)===APP.state.sessionId) cls='seat-selected'; else{ cls='seat-locked'; disabled=true; } } html+=`<button data-seat="${i}" class="w-12 h-12 rounded-xl font-bold transition-all ${cls}" ${disabled?'disabled':''}>${i}</button>`; } html+='</div>'; grid.innerHTML=html; document.querySelectorAll('[data-seat]').forEach(btn=>{ btn.addEventListener('click',()=>{ if(btn.hasAttribute('disabled')) return; handleSeatClick(parseInt(btn.dataset.seat)); }); }); }
-  function handleSeatClick(seat){ if(!APP.state.trip) return; const state=APP.state.locks.seats.get(seat); if(APP.state.locks.selected.has(seat)){ if(state==='locked'&&APP.state.locks.owners.get(seat)===APP.state.sessionId) releaseLock(seat,APP.state.trip.id); APP.state.locks.selected.delete(seat); }else{ if(lockSeat(seat,APP.state.trip.id,180)) APP.state.locks.selected.add(seat); else{ Utils.toast(`Seat ${seat} locked by another session`,'error'); return; } } updateSelectedSummary(); renderSeatMap(); }
-  function updateSelectedSummary(){ const seats=Array.from(APP.state.locks.selected).sort((a,b)=>a-b); document.getElementById('selectedSeatsList').innerText=seats.length?seats.join(', '):'—'; const fare=APP.state.trip?.activeFare||0; const total=seats.length*fare; document.getElementById('totalAmount').innerText=`KSh ${total}`; document.getElementById('proceedPaymentBtn').disabled=seats.length===0; document.getElementById('modalAmount').innerText=total; }
-  // Cryptographic tickets
-  async function generateTicket(bookingId,trip,seats,secret){ const payload={bookingId,tripId:trip.id,plate:trip.vehiclePlate,seats,expiry:trip.departureTime,issued:new Date().toISOString()}; const str=JSON.stringify(payload); const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']); const sig=await crypto.subtle.sign('HMAC',key,new TextEncoder().encode(str)); const sigHex=Array.from(new Uint8Array(sig)).map(b=>b.toString(16).padStart(2,'0')).join(''); const envelope=JSON.stringify({p:str,s:sigHex}); return {qrData:Utils.base64Encode(envelope),payload}; }
-  async function verifyTicket(qr,secret){ try{ const dec=Utils.base64Decode(qr); const env=JSON.parse(dec); const key=await crypto.subtle.importKey('raw',new TextEncoder().encode(secret),{name:'HMAC',hash:'SHA-256'},false,['verify']); const sigBytes=new Uint8Array(env.s.match(/.{2}/g).map(b=>parseInt(b,16))); const valid=await crypto.subtle.verify('HMAC',key,sigBytes,new TextEncoder().encode(env.p)); if(!valid) return {valid:false,reason:'Invalid signature'}; const payload=JSON.parse(env.p); if(new Date(payload.expiry)<new Date()) return {valid:false,reason:'Expired ticket'}; return {valid:true,payload}; }catch(e){ return {valid:false,reason:'Malformed data'}; } }
-  // UI Binding
-  const liveFeedDiv=document.getElementById('liveFeed'); function addLiveFeedEvent(msg){ if(!liveFeedDiv) return; const d=document.createElement('div'); d.className='text-[11px] font-mono flex justify-between border-b border-zinc-800/40 py-1.5'; d.innerHTML=`<span class="text-zinc-500">${new Date().toLocaleTimeString()}</span><span class="text-emerald-300 truncate">${msg}</span>`; liveFeedDiv.prepend(d); while(liveFeedDiv.children.length>12) liveFeedDiv.removeChild(liveFeedDiv.lastChild); }
-  function updateTripsUI(){ const routes=DataStore.getRoutes(); const trips=DataStore.getTrips(); const buses=DataStore.getBuses(); const busMap=new Map(buses.map(b=>[b.id,b])); const routeSel=document.getElementById('routeSelect'),tripSel=document.getElementById('tripSelect'); routeSel.innerHTML=routes.length?routes.map(r=>`<option value="${r.id}">${r.source} → ${r.destination} (KSh ${r.baseFare})</option>`).join(''):'<option>No routes</option>'; routeSel.onchange=()=>{ const rid=routeSel.value; const flt=trips.filter(t=>t.routeId===rid); tripSel.innerHTML=flt.length?flt.map(t=>{const b=busMap.get(t.busId); return `<option value="${t.id}">${Utils.formatTime(t.departureTime)} • ${b?.plate||'?'}</option>`;}).join(''):'<option>No departures</option>'; tripSel.value=''; }; tripSel.onchange=()=>{ const tid=tripSel.value; if(!tid){ APP.state.trip=null; APP.state.locks.cleanup(); document.getElementById('ticketSection').classList.add('hidden'); renderSeatMap(); return; } const t=trips.find(x=>x.id===tid); const b=busMap.get(t?.busId); if(t&&b){ APP.state.trip={...t,capacity:b.capacity,vehiclePlate:b.plate}; initSeats(b.capacity); document.getElementById('ticketSection').classList.add('hidden'); addLiveFeedEvent(`Trip selected: ${t.routeName}`); } }; routeSel.dispatchEvent(new Event('change')); }
-  document.getElementById('proceedPaymentBtn').addEventListener('click',()=>{ if(!APP.state.trip||APP.state.locks.selected.size===0) return; document.getElementById('mpesaModal').classList.remove('hidden'); document.getElementById('mpesaPhone').value='0712345678'; }); document.getElementById('confirmMpesaPay').addEventListener('click',async function(){ const phone=document.getElementById('mpesaPhone').value.trim(); if(!phone.match(/^07\d{8}$/)) return Utils.toast('Invalid M-Pesa number','error'); const seats=Array.from(APP.state.locks.selected).sort((a,b)=>a-b); const tripSnapshot={...APP.state.trip}; this.disabled=true; document.getElementById('mpesaSpinner').classList.remove('hidden'); addLiveFeedEvent(`Processing payment for ${seats.length} seats...`); await new Promise(r=>setTimeout(r,1500)); const success=Math.random()<0.85; if(success){ addLiveFeedEvent(`Payment confirmed`); markSeatsSold(seats,tripSnapshot.id); const bookingId='BK'+Date.now()+Math.floor(Math.random()*1000); const ticket=await generateTicket(bookingId,tripSnapshot,seats,APP.state.tenantSecret); document.getElementById('bookingIdDisplay').innerText=bookingId; document.getElementById('tripDisplay').innerText=`${tripSnapshot.routeName} • ${tripSnapshot.vehiclePlate}`; document.getElementById('ticketSeats').innerText=seats.join(', '); document.getElementById('ticketExpiry').innerText=Utils.formatTime(tripSnapshot.departureTime); document.getElementById('qrCodeContainer').innerHTML=''; new QRCode(document.getElementById('qrCodeContainer'),{text:ticket.qrData,width:120,height:120}); document.getElementById('verifyQrInput').value=ticket.qrData; document.getElementById('ticketSection').classList.remove('hidden'); Utils.toast('Booking confirmed!','success'); }else{ addLiveFeedEvent(`Payment failed`); seats.forEach(s=>releaseLock(s,tripSnapshot.id)); Utils.toast('Transaction declined, seats released','error'); } APP.state.locks.selected.clear(); updateSelectedSummary(); APP.modals.closeAll(); this.disabled=false; document.getElementById('mpesaSpinner').classList.add('hidden'); }); document.getElementById('verifyTicketBtn').addEventListener('click',async()=>{ const raw=document.getElementById('verifyQrInput').value.trim(); if(!raw) return; const res=await verifyTicket(raw,APP.state.tenantSecret); const div=document.getElementById('verifyResult'); if(res.valid){ div.className='mt-3 text-xs rounded-lg p-2 bg-emerald-900/40 text-emerald-200'; div.innerHTML=`✅ VALID | ID: ${res.payload.bookingId} | Seats: ${res.payload.seats.join(',')}`; }else{ div.className='mt-3 text-xs rounded-lg p-2 bg-red-900/40 text-red-200'; div.innerHTML=`❌ ${res.reason}`; } div.classList.remove('hidden'); }); document.getElementById('tenantSelector').addEventListener('change',(e)=>{ APP.state.tenant=e.target.value; APP.state.tenantSecret=e.target.value==='sacco_simba'?'simba_secret':'nganya_secret'; APP.state.locks.cleanup(); APP.state.trip=null; document.getElementById('ticketSection').classList.add('hidden'); DataStore.seedIfEmpty(e.target.value); updateTripsUI(); addLiveFeedEvent(`Switched to ${e.target.value}`); });
-  // ADMIN
-  let editingId=null,deleteTarget=null; function updateAdminDashboard(){ const buses=DataStore.getBuses(),routes=DataStore.getRoutes(),trips=DataStore.getTrips(); document.getElementById('statBuses').innerText=buses.length; document.getElementById('statRoutes').innerText=routes.length; document.getElementById('statTrips').innerText=trips.length; document.getElementById('statRevenue').innerText=`KSh ${(buses.length*12400).toLocaleString()}`; const busDiv=document.getElementById('busesTable'); busDiv.innerHTML=buses.length?buses.map(b=>`<div class="table-row flex justify-between items-center text-sm"><div><p class="font-mono text-emerald-400">${b.plate}</p><p class="text-xs text-zinc-400">${b.capacity} seats • ${b.driver}</p></div><div class="flex gap-2"><span class="badge-status ${b.status==='active'?'badge-active':'badge-inactive'}">${b.status}</span><button onclick="editBus('${b.id}')" class="px-2 py-1 bg-blue-600/40 rounded text-xs">Edit</button><button onclick="openDeleteModal('bus','${b.id}','${b.plate}')" class="px-2 py-1 bg-red-600/40 rounded text-xs">Del</button></div></div>`).join(''):'<div class="text-center py-8">No buses</div>'; const routeDiv=document.getElementById('routesTable'); routeDiv.innerHTML=routes.length?routes.map(r=>`<div class="table-row flex justify-between items-center text-sm"><div><p>${r.source} → ${r.destination}</p><p class="text-xs text-zinc-400">KSh ${r.baseFare} • ${r.distance}km</p></div><div class="flex gap-2"><button onclick="editRoute('${r.id}')" class="px-2 py-1 bg-blue-600/40 rounded text-xs">Edit</button><button onclick="openDeleteModal('route','${r.id}','${r.source}→${r.destination}')" class="px-2 py-1 bg-red-600/40 rounded text-xs">Del</button></div></div>`).join(''):'<div class="text-center py-8">No routes</div>'; const tripDiv=document.getElementById('tripsTable'); const busMap=new Map(buses.map(b=>[b.id,b])); tripDiv.innerHTML=trips.length?trips.map(t=>{const b=busMap.get(t.busId); return `<div class="table-row flex justify-between items-center text-sm"><div><p>${t.routeName}</p><p class="text-xs text-zinc-400">${Utils.formatTime(t.departureTime)} • ${b?.plate||'?'}</p></div><div class="flex gap-2"><button onclick="editTrip('${t.id}')" class="px-2 py-1 bg-blue-600/40 rounded text-xs">Edit</button><button onclick="openDeleteModal('trip','${t.id}','${t.routeName}')" class="px-2 py-1 bg-red-600/40 rounded text-xs">Del</button></div></div>`; }).join(''):'<div class="text-center py-8">No trips</div>'; }
-  window.editBus=function(id){ const bus=DataStore.getBuses().find(b=>b.id===id); if(bus){ editingId=id; document.getElementById('busPlate').value=bus.plate; document.getElementById('busCapacity').value=bus.capacity; document.getElementById('busDriver').value=bus.driver; document.getElementById('busStatus').value=bus.status; Utils.clearError('busFormError'); document.getElementById('busModal').classList.remove('hidden'); } }; window.editRoute=function(id){ const r=DataStore.getRoutes().find(r=>r.id===id); if(r){ editingId=id; document.getElementById('routeSource').value=r.source; document.getElementById('routeDestination').value=r.destination; document.getElementById('routeFare').value=r.baseFare; document.getElementById('routeDistance').value=r.distance; document.getElementById('routeModal').classList.remove('hidden'); } }; window.editTrip=function(id){ const t=DataStore.getTrips().find(t=>t.id===id); if(t){ editingId=id; populateTripSelects(); document.getElementById('tripRoute').value=t.routeId; document.getElementById('tripBus').value=t.busId; document.getElementById('tripDeparture').value=new Date(t.departureTime).toISOString().slice(0,16); const route=DataStore.getRoutes().find(r=>r.id===t.routeId); document.getElementById('tripFare').value=(t.activeFare===route?.baseFare)?'':t.activeFare; document.getElementById('tripModal').classList.remove('hidden'); } }; function populateTripSelects(){ const routes=DataStore.getRoutes(); const buses=DataStore.getBuses(); document.getElementById('tripRoute').innerHTML='<option value="">—Route—</option>'+routes.map(r=>`<option value="${r.id}">${r.source}→${r.destination}</option>`).join(''); document.getElementById('tripBus').innerHTML='<option value="">—Bus—</option>'+buses.filter(b=>b.status==='active').map(b=>`<option value="${b.id}">${b.plate} (${b.capacity})</option>`).join(''); } document.getElementById('addBusBtn').addEventListener('click',()=>{ editingId=null; document.getElementById('busPlate').value=''; document.getElementById('busCapacity').value='14'; document.getElementById('busDriver').value=''; document.getElementById('busStatus').value='active'; document.getElementById('busModal').classList.remove('hidden'); }); document.getElementById('saveBusBtn').addEventListener('click',()=>{ const plate=document.getElementById('busPlate').value.trim().toUpperCase(),capacity=parseInt(document.getElementById('busCapacity').value),driver=document.getElementById('busDriver').value.trim(),status=document.getElementById('busStatus').value; if(!plate||!capacity||!driver) return Utils.showError('busFormError','All fields required'); const buses=DataStore.getBuses(); if(buses.some(b=>b.plate===plate&&b.id!==editingId)) return Utils.showError('busFormError','Duplicate plate'); if(editingId){ const idx=buses.findIndex(b=>b.id===editingId); if(idx>=0) buses[idx]={...buses[idx],plate,capacity,driver,status}; }else buses.push({id:'B'+Date.now(),plate,capacity,driver,status}); DataStore.setBuses(buses); APP.modals.closeAll(); updateAdminDashboard(); updateTripsUI(); Utils.toast('Bus saved','success'); }); document.getElementById('addRouteBtn').addEventListener('click',()=>{ editingId=null; document.getElementById('routeSource').value=''; document.getElementById('routeDestination').value=''; document.getElementById('routeFare').value=''; document.getElementById('routeDistance').value=''; document.getElementById('routeModal').classList.remove('hidden'); }); document.getElementById('saveRouteBtn').addEventListener('click',()=>{ const source=document.getElementById('routeSource').value.trim(),dest=document.getElementById('routeDestination').value.trim(),fare=parseInt(document.getElementById('routeFare').value),dist=parseInt(document.getElementById('routeDistance').value); if(!source||!dest||!fare||!dist) return Utils.showError('routeFormError','Complete all fields'); const routes=DataStore.getRoutes(); if(routes.some(r=>r.source===source&&r.destination===dest&&r.id!==editingId)) return Utils.showError('routeFormError','Duplicate corridor'); if(editingId){ const idx=routes.findIndex(r=>r.id===editingId); if(idx>=0) routes[idx]={...routes[idx],source,destination:dest,baseFare:fare,distance:dist}; }else routes.push({id:'R'+Date.now(),source,destination:dest,baseFare:fare,distance:dist}); DataStore.setRoutes(routes); APP.modals.closeAll(); updateAdminDashboard(); updateTripsUI(); Utils.toast('Route saved','success'); }); document.getElementById('addTripBtn').addEventListener('click',()=>{ editingId=null; populateTripSelects(); document.getElementById('tripRoute').value=''; document.getElementById('tripBus').value=''; document.getElementById('tripDeparture').value=''; document.getElementById('tripFare').value=''; document.getElementById('tripModal').classList.remove('hidden'); }); document.getElementById('saveTripBtn').addEventListener('click',()=>{ const rid=document.getElementById('tripRoute').value,bid=document.getElementById('tripBus').value,dep=document.getElementById('tripDeparture').value,fareOverride=document.getElementById('tripFare').value; if(!rid||!bid||!dep) return Utils.showError('tripFormError','Select route, bus & departure'); const route=DataStore.getRoutes().find(r=>r.id===rid),bus=DataStore.getBuses().find(b=>b.id===bid); if(!route||!bus) return Utils.showError('tripFormError','Invalid reference'); const trips=DataStore.getTrips(); const newTrip={id:editingId||'T'+Date.now(),routeId:rid,busId:bid,departureTime:new Date(dep).toISOString(),routeName:`${route.source}→${route.destination}`,vehiclePlate:bus.plate,activeFare:fareOverride?parseInt(fareOverride):route.baseFare,capacity:bus.capacity}; if(editingId){ const idx=trips.findIndex(t=>t.id===editingId); if(idx>=0) trips[idx]=newTrip; }else trips.push(newTrip); DataStore.setTrips(trips); APP.modals.closeAll(); updateAdminDashboard(); updateTripsUI(); Utils.toast('Trip scheduled','success'); }); window.openDeleteModal=(type,id,label)=>{ deleteTarget={type,id}; document.getElementById('deleteMsg').innerText=`Delete ${type}: "${label}"?`; document.getElementById('deleteModal').classList.remove('hidden'); }; document.getElementById('confirmDeleteBtn').addEventListener('click',()=>{ if(!deleteTarget) return; const {type,id}=deleteTarget; if(type==='bus') DataStore.setBuses(DataStore.getBuses().filter(b=>b.id!==id)); else if(type==='route') DataStore.setRoutes(DataStore.getRoutes().filter(r=>r.id!==id)); else if(type==='trip') DataStore.setTrips(DataStore.getTrips().filter(t=>t.id!==id)); APP.modals.closeAll(); updateAdminDashboard(); updateTripsUI(); Utils.toast(`${type} deleted`,'success'); deleteTarget=null; }); document.getElementById('cancelDeleteBtn').addEventListener('click',()=>APP.modals.closeAll()); document.querySelectorAll('.closeModal').forEach(btn=>btn.addEventListener('click',()=>APP.modals.closeAll())); document.querySelectorAll('.modal-overlay').forEach(modal=>modal.addEventListener('click',(e)=>{if(e.target===modal)APP.modals.closeAll();})); document.querySelectorAll('.nav-tab').forEach(tab=>tab.addEventListener('click',function(){ const v=this.dataset.view; if(APP.state.role==='commuter'&&v==='admin') return Utils.toast('Admin only','error'); document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active')); this.classList.add('active'); document.getElementById('commuterView').classList.toggle('hidden',v!=='commuter'); document.getElementById('adminView').classList.toggle('hidden',v!=='admin'); if(v==='admin') updateAdminDashboard(); })); document.querySelectorAll('.admin-tab').forEach(tab=>tab.addEventListener('click',function(){ document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active')); this.classList.add('active'); document.querySelectorAll('.admin-content').forEach(c=>c.classList.add('hidden')); document.getElementById(this.dataset.tab+'Tab').classList.remove('hidden'); })); function initApp(){ updateTripsUI(); if(window.lucide) lucide.createIcons(); } window.addEventListener('beforeunload',()=>{ APP.state.locks?.cleanup(); }); document.addEventListener('DOMContentLoaded',()=>{ if(window.lucide) lucide.createIcons(); });
+  // ──────────────────────────────────────────────
+  //  DATA: Routes & Seat Generation
+  // ──────────────────────────────────────────────
+
+  const ROUTES = [
+    { id: 'R-101', name: 'Nairobi CBD – Machakos', baseFare: 250, peakFare: 350, fuel: 4500, crew: 2000, dist: 62 },
+    { id: 'R-239', name: 'Nairobi CBD – Thika', baseFare: 150, peakFare: 200, fuel: 3000, crew: 1500, dist: 44 },
+    { id: 'R-125', name: 'Railways – Ongata Rongai', baseFare: 100, peakFare: 150, fuel: 2200, crew: 1200, dist: 22 },
+    { id: 'R-110', name: 'Nairobi CBD – Kitengela', baseFare: 150, peakFare: 200, fuel: 2800, crew: 1500, dist: 32 },
+    { id: 'R-IC4', name: 'Nairobi – Eldoret', baseFare: 1200, peakFare: 1500, fuel: 18000, crew: 4000, dist: 310 },
+  ];
+
+  function generate43Seats() {
+    return Array.from({ length: 43 }, (_, i) => ({
+      id: i + 1,
+      label: `S${i + 1}`,
+      booked: false,
+      farePaid: 0,
+    }));
+  }
+
+  // ──────────────────────────────────────────────
+  //  STATE
+  // ──────────────────────────────────────────────
+
+  let seats = generate43Seats();
+  let selectedRouteId = ROUTES[0].id;
+  let isPeak = false;
+  let customFare = ROUTES[0].baseFare;
+  let manualExpense = 0;
+
+  // DOM refs
+  const $ = id => document.getElementById(id);
+  const routeSelect = $('routeSelect');
+  const fareInput = $('fareOverride');
+  const expenseInput = $('expenseInput');
+  const seatGrid = $('seatGrid');
+  const peakToggle = $('peakToggle');
+
+  // ──────────────────────────────────────────────
+  //  ANALYTICS ENGINE
+  // ──────────────────────────────────────────────
+
+  function getRoute() {
+    return ROUTES.find(r => r.id === selectedRouteId) || ROUTES[0];
+  }
+
+  function calcAnalytics() {
+    const route = getRoute();
+    const effectiveFare = isPeak ? route.peakFare : route.baseFare;
+    let totalRevenue = 0;
+    let booked = 0;
+
+    seats.forEach(s => {
+      if (s.booked) {
+        booked++;
+        totalRevenue += (s.farePaid && s.farePaid > 0) ? s.farePaid : effectiveFare;
+      }
+    });
+
+    const occupancy = seats.length > 0 ? (booked / seats.length) * 100 : 0;
+    const expenses = route.fuel + route.crew + manualExpense;
+    const profit = totalRevenue - expenses;
+    const breakEven = expenses > 0 ? Math.ceil(expenses / effectiveFare) : 0;
+
+    return { booked, occupancy, totalRevenue, expenses, profit, breakEven, effectiveFare };
+  }
+
+  // ──────────────────────────────────────────────
+  //  RENDER
+  // ──────────────────────────────────────────────
+
+  function renderSeats() {
+    // Build grid rows: rows 1-9 (4 seats), row 10 (2 seats), row 11 (5 seats)
+    const indices = [];
+    // Row 1-9: 4 seats each -> seat indices 0..35
+    for (let r = 0; r < 9; r++) {
+      const row = [];
+      for (let c = 0; c < 4; c++) {
+        row.push(r * 4 + c);
+      }
+      indices.push(row);
+    }
+    // Row 10: seats 36, 37
+    indices.push([36, 37]);
+    // Row 11: rear bench seats 38..42
+    indices.push([38, 39, 40, 41, 42]);
+
+    let html = '';
+    indices.forEach((row, idx) => {
+      const isLastRow = idx === indices.length - 1;
+      const rowClass = isLastRow ? 'flex justify-between gap-1' : 'flex justify-between gap-4';
+
+      html += `<div class="${rowClass}">`;
+
+      if (isLastRow) {
+        // rear bench: all seats span full width
+        row.forEach(seatIdx => {
+          const s = seats[seatIdx];
+          if (!s) return;
+          html += `<button class="seat-btn flex-1 ${s.booked ? 'booked' : ''}" data-id="${s.id}">${s.id}</button>`;
+        });
+      } else {
+        // left side (first 2 seats)
+        html += `<div class="flex gap-1.5">`;
+        row.slice(0, 2).forEach(seatIdx => {
+          const s = seats[seatIdx];
+          if (!s) return;
+          html += `<button class="seat-btn ${s.booked ? 'booked' : ''}" data-id="${s.id}">${s.id}</button>`;
+        });
+        html += `</div>`;
+        // right side (last 2 seats)
+        html += `<div class="flex gap-1.5">`;
+        row.slice(2, 4).forEach(seatIdx => {
+          const s = seats[seatIdx];
+          if (!s) return;
+          html += `<button class="seat-btn ${s.booked ? 'booked' : ''}" data-id="${s.id}">${s.id}</button>`;
+        });
+        html += `</div>`;
+      }
+
+      html += `</div>`;
+    });
+
+    seatGrid.innerHTML = html;
+
+    // Attach click events
+    seatGrid.querySelectorAll('.seat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = parseInt(btn.dataset.id);
+        toggleSeat(id);
+      });
+    });
+  }
+
+  function renderStats() {
+    const stats = calcAnalytics();
+    const route = getRoute();
+
+    $('statBooked').innerHTML = `${stats.booked} / 43`;
+    $('statOccupancy').textContent = `${stats.occupancy.toFixed(1)}% Full`;
+    $('statRevenue').textContent = `KSh ${stats.totalRevenue.toLocaleString()}`;
+    $('statExpenses').textContent = `KSh ${stats.expenses.toLocaleString()}`;
+
+    const profitEl = $('statProfit');
+    profitEl.textContent = `KSh ${stats.profit.toLocaleString()}`;
+    profitEl.className = `text-xl font-bold ${stats.profit >= 0 ? 'text-emerald-400' : 'text-rose-500'}`;
+
+    $('statBreakEven').textContent = `${stats.breakEven} Seats`;
+
+    // Peak badge
+    peakToggle.textContent = isPeak ? '🔥 Peak Surge On' : '❄️ Off‑Peak Mode';
+    peakToggle.className = `px-5 py-2 rounded-lg text-sm font-semibold transition border ${isPeak ? 'bg-amber-600 text-white border-amber-500' : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border-slate-700'}`;
+  }
+
+  function renderAll() {
+    renderSeats();
+    renderStats();
+  }
+
+  // ──────────────────────────────────────────────
+  //  ACTIONS
+  // ──────────────────────────────────────────────
+
+  function toggleSeat(id) {
+    const seat = seats.find(s => s.id === id);
+    if (!seat) return;
+
+    const route = getRoute();
+    const effectiveFare = isPeak ? route.peakFare : route.baseFare;
+    const fareOverride = parseFloat(fareInput.value) || 0;
+
+    if (seat.booked) {
+      // Unbook
+      seat.booked = false;
+      seat.farePaid = 0;
+    } else {
+      // Book
+      seat.booked = true;
+      seat.farePaid = fareOverride > 0 ? fareOverride : effectiveFare;
+    }
+    renderAll();
+  }
+
+  function fillAll() {
+    const route = getRoute();
+    const effectiveFare = isPeak ? route.peakFare : route.baseFare;
+    const fareOverride = parseFloat(fareInput.value) || 0;
+    const fare = fareOverride > 0 ? fareOverride : effectiveFare;
+
+    seats.forEach(s => {
+      s.booked = true;
+      s.farePaid = fare;
+    });
+    renderAll();
+  }
+
+  function clearAll() {
+    seats.forEach(s => {
+      s.booked = false;
+      s.farePaid = 0;
+    });
+    renderAll();
+  }
+
+  function loadRouteOptions() {
+    routeSelect.innerHTML = ROUTES.map(r =>
+      `<option value="${r.id}" ${r.id === selectedRouteId ? 'selected' : ''}>${r.name} (${r.dist} km)</option>`
+    ).join('');
+  }
+
+  function refreshFromControls() {
+    const route = getRoute();
+    customFare = parseFloat(fareInput.value) || route.baseFare;
+    manualExpense = parseFloat(expenseInput.value) || 0;
+    renderAll();
+  }
+
+  // ──────────────────────────────────────────────
+  //  EVENT BINDING
+  // ──────────────────────────────────────────────
+
+  // Route change
+  routeSelect.addEventListener('change', (e) => {
+    selectedRouteId = e.target.value;
+    const route = getRoute();
+    fareInput.value = route.baseFare;
+    customFare = route.baseFare;
+    // Reset custom fares on already-booked seats? We'll keep them.
+    renderAll();
+  });
+
+  // Fare override change
+  fareInput.addEventListener('input', () => {
+    customFare = parseFloat(fareInput.value) || 0;
+    // We do NOT auto-update existing seats; only new bookings use this.
+    // But we re-render stats (effective fare changed for new bookings only)
+    renderStats();
+  });
+
+  // Expense change
+  expenseInput.addEventListener('input', () => {
+    manualExpense = parseFloat(expenseInput.value) || 0;
+    renderStats();
+  });
+
+  // Peak toggle
+  peakToggle.addEventListener('click', () => {
+    isPeak = !isPeak;
+    // Update fare input placeholder to show peak/base
+    const route = getRoute();
+    const displayFare = isPeak ? route.peakFare : route.baseFare;
+    // If user hasn't manually overridden, update the input
+    const currentVal = parseFloat(fareInput.value);
+    if (!currentVal || currentVal === (isPeak ? route.peakFare : route.baseFare)) {
+      fareInput.value = displayFare;
+      customFare = displayFare;
+    }
+    renderAll();
+  });
+
+  // Bulk buttons
+  $('fillAllBtn').addEventListener('click', fillAll);
+  $('clearAllBtn').addEventListener('click', clearAll);
+
+  // ──────────────────────────────────────────────
+  //  INIT
+  // ──────────────────────────────────────────────
+
+  function init() {
+    loadRouteOptions();
+    // Set initial fare input
+    const route = ROUTES[0];
+    fareInput.value = route.baseFare;
+    customFare = route.baseFare;
+    expenseInput.value = 0;
+    manualExpense = 0;
+    selectedRouteId = route.id;
+    renderAll();
+  }
+
+  init();
 </script>
+
 </body>
 </html>
